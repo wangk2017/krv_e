@@ -1,0 +1,11 @@
+#=======================================================================
+# Makefrag for debug tests
+#-----------------------------------------------------------------------
+
+debug_sc_tests = \
+	ebreak \
+	breakpoint \
+
+debug_m_tests = $(addprefix debug-m-, $(debug_sc_tests))
+
+spike32_tests += $(debug_m_tests)
