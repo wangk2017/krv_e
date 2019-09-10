@@ -29,13 +29,14 @@ module axi_master (
 input 				cpu_clk,		//cpu clock
 input 				cpu_resetn,		//cpu reset, active low
 input 				M_access,		//master access signal
+output				ready_M,		//ready to master
 input [3:0] 			M_write_strobe,		//master write strobe
 input 				M_rd0_wr1,		//master access cmd, read: 0; write: 1
 input [`ADDR_WIDTH - 1 : 0]	M_addr,			//master address
 input [`DATA_WIDTH - 1 : 0]	M_write_data, 		//master write data
-output [`DATA_WIDTH - 1 : 0]	M_read_data, 		//master read data
-output				M_read_data_valid,	//signal to master for read data valid
-output [1:0]			M_resp,			//response to master
+output [`DATA_WIDTH - 1 : 0]	read_data_M, 		//master read data
+output				read_data_valid_M,	//signal to master for read data valid
+output [1:0]			resp_M,			//response to master
 
 //AXI4-lite master memory interface
 //AXI4-lite global signal
@@ -237,9 +238,10 @@ assign ARADDR	= araddr_r;
 assign ARPROT	= aprot_r;
 assign RREADY	= rready_r;
 
-assign M_resp = (state == RRDY) && RVALID ? RRESP : 2'h0;
-assign M_read_data = (state == RRDY) && RVALID ? RDATA : {`AXI_DATA_WIDTH{1'b0}};
-assign M_read_data_valid = (state == RRDY) && RVALID;
+assign ready_M = state == IDLE;
+assign resp_M = ((state == RRDY) && RVALID) ? RRESP : (((state == BRDY) && BVALID) ? BRESP: 2'h0);
+assign read_data_M = (state == RRDY) && RVALID ? RDATA : {`AXI_DATA_WIDTH{1'b0}};
+assign read_data_valid_M = (state == RRDY) && RVALID;
 
 
 
