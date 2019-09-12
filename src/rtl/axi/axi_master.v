@@ -13,7 +13,7 @@
 */
 
 //==============================================================||
-// File Name: 		axi.v					||
+// File Name: 		axi_master.v				||
 // Author:    		Kitty Wang				||
 // Description: 						||
 //	      		axi master		        	|| 
@@ -24,20 +24,6 @@
 
 `include "axi_defines.vh"
 module axi_master (
-
-//cpu side interface
-input 				cpu_clk,		//cpu clock
-input 				cpu_resetn,		//cpu reset, active low
-input 				M_access,		//master access signal
-output				ready_M,		//ready to master
-input [3:0] 			M_write_strobe,		//master write strobe
-input 				M_rd0_wr1,		//master access cmd, read: 0; write: 1
-input [`ADDR_WIDTH - 1 : 0]	M_addr,			//master address
-input [`DATA_WIDTH - 1 : 0]	M_write_data, 		//master write data
-output [`DATA_WIDTH - 1 : 0]	read_data_M, 		//master read data
-output				read_data_valid_M,	//signal to master for read data valid
-output [1:0]			resp_M,			//response to master
-
 //AXI4-lite master memory interface
 //AXI4-lite global signal
 input ACLK,						//AXI clock
@@ -70,7 +56,21 @@ output [2:0]				ARPROT,
 input 					RVALID,
 output					RREADY,
 input [`AXI_DATA_WIDTH - 1 : 0]		RDATA,
-input [1:0]				RRESP
+input [1:0]				RRESP,
+
+//master side interface
+input 				cpu_clk,		//cpu clock
+input 				cpu_resetn,		//cpu reset, active low
+input 				M_access,		//master access signal
+output				ready_M,		//ready to master
+input [3:0] 			M_write_strobe,		//master write strobe
+input 				M_rd0_wr1,		//master access cmd, read: 0; write: 1
+input [`ADDR_WIDTH - 1 : 0]	M_addr,			//master address
+input [`DATA_WIDTH - 1 : 0]	M_write_data, 		//master write data
+output [`DATA_WIDTH - 1 : 0]	read_data_M, 		//master read data
+output				read_data_valid_M,	//signal to master for read data valid
+output [1:0]			resp_M			//response to master
+
 
 );
 
