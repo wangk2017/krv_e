@@ -26,7 +26,7 @@
 module axi_decoder (
 
 input [`AXI_ADDR_WIDTH - 1 : 0] 	addr,
-output [5:0]				slave_no
+output reg [2:0]			slave_no
 
 );
 
@@ -76,13 +76,20 @@ wire SEL_S5 = (
 	(nibble_7 >= 4'h8)
 );
 
-assign slave_no = {
-		   SEL_S5, 
-		   SEL_S4,
-		   SEL_S3,
-		   SEL_S2,
-		   SEL_S1,
-		   SEL_S0 
-		  }
+always @ *
+begin
+	if(SEL_S0)
+	slave_no = 3'h0;
+	else if(SEL_S1)
+	slave_no = 3'h1;
+	else if(SEL_S2)
+	slave_no = 3'h2;
+	else if(SEL_S3)
+	slave_no = 3'h3;
+	else if(SEL_S4)
+	slave_no = 3'h4;
+	else if(SEL_S5)
+	slave_no = 3'h5;
+end
 
 endmodule
