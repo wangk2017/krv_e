@@ -21,7 +21,6 @@
 //                      2017/10/25 				||
 //                      First version				||
 //===============================================================
-`define WRITE_BUFFER
 
 `include "top_defines.vh"
 module IAHB (
