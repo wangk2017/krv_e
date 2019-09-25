@@ -13,17 +13,19 @@
 */
 
 //==============================================================||
-// File Name: 		axi.v					||
+// File Name: 		axi4_lite.v				||
 // Author:    		Kitty Wang				||
 // Description: 						||
-//	      		axi bus			        	|| 
+//	      		axi4 lite bus 			    	|| 
 // History:   							||
 //                      2019/9/16				||
 //                      First version				||
+//			2019/9/25				||
+//			rename the module to axi4_lite		||
 //===============================================================
 
 `include "axi_defines.vh"
-module axi (
+module axi4_lite (
 //AXI4-lite global signal
 input ACLK,						//AXI clock
 input ARESETn,						//AXI reset, active low
@@ -653,14 +655,15 @@ assign S5_BREADY = s_bready[5];
 
 
 //---------------------------------//
-//AXI4-lite bus read
+//AXI4-lite read bus
 //---------------------------------//
 //Signals declaration
 wire arvalid;
 wire ar_ready;
 wire rready;
 wire r_valid;
-wire[`AXI_DATA_WIDTH:0] r_data;
+wire[`AXI_DATA_WIDTH - 1 : 0] r_data;
+wire[1:0] r_resp;
 
 reg  [1:0] ar_grant_i;
 reg  [1:0] ar_grant_r;
@@ -795,6 +798,175 @@ begin
 end
 
 wire [1:0] ar_grant = rd_idle ? ar_grant_i : ar_grant_r;
+
+//Obtain the granted master read valid
+wire  m_arvalid[2:0];
+assign m_arvalid[2] = M2_ARVALID;
+assign m_arvalid[1] = M1_ARVALID;
+assign m_arvalid[0] = M0_ARVALID;
+assign arvalid = m_arvalid[ar_grant];
+
+//Obtain the granted master read address
+wire [`AXI_ADDR_WIDTH - 1 : 0] m_araddr[2:0];
+assign m_araddr[2] = M2_ARADDR;
+assign m_araddr[1] = M1_ARADDR;
+assign m_araddr[0] = M0_ARADDR;
+wire [`AXI_ADDR_WIDTH - 1 : 0] 	araddr = m_araddr[ar_grant];
+
+//Obtain the granted master rready
+wire m_rready[2:0];
+assign m_rready[2] = M2_RREADY;
+assign m_rready[1] = M1_RREADY;
+assign m_rready[0] = M0_RREADY;
+assign rready = m_rready[ar_grant];
+
+
+
+//assign the selected slave signals to the granted master
+reg m_arready [2:0];
+reg m_rvalid [2:0];
+reg [`AXI_DATA_WIDTH - 1 : 0] m_rdata [2:0];
+reg [1 : 0] m_rresp [2:0];
+
+integer j;
+
+always @ *
+begin
+	for (j=0; j<3; j=j+1)
+	begin
+		if(j==ar_grant)
+		begin
+			m_arready[j] = ar_ready;
+			m_rvalid[j]  = r_valid;
+			m_rdata[j]   = r_data;
+			m_rresp[j]   = r_resp;
+		end //if(j==ar_grant)
+		else
+		begin
+			m_arready[j] = 1'b0;
+			m_rvalid[j]  = 1'b0;
+			m_rdata[j]   = {`AXI_DATA_WIDTH{1'b0}};
+			m_rdata[j]   = 2'b00;
+		end //else
+	end //for
+end
+
+
+
+//ARREADY
+assign M0_ARREADY = m_arready[0];
+assign M1_ARREADY = m_arready[1];
+assign M2_ARREADY = m_arready[2];
+
+//RVALID
+assign M0_RVALID = m_rvalid[0];
+assign M1_RVALID = m_rvalid[1];
+assign M2_RVALID = m_rvalid[2];
+
+//RDATA
+assign M0_RDATA = m_rdata[0];
+assign M1_RDATA = m_rdata[1];
+assign M2_RDATA = m_rdata[2];
+
+//RRESP
+assign M0_RRESP = m_rresp[0];
+assign M1_RRESP = m_rresp[1];
+assign M2_RRESP = m_rresp[2];
+
+
+
+
+wire [2:0] rd_slave_no;
+
+//read address decoder
+axi_decoder rdaddr_dec(
+.addr		(araddr),
+.slave_no	(rd_slave_no)
+);
+
+//Obtain the slave arready for master read
+wire s_arready [5:0];
+assign s_arready[5] = S5_ARREADY;
+assign s_arready[4] = S4_ARREADY;
+assign s_arready[3] = S3_ARREADY;
+assign s_arready[2] = S2_ARREADY;
+assign s_arready[1] = S1_ARREADY;
+assign s_arready[0] = S0_ARREADY;
+
+assign ar_ready = s_arready[rd_slave_no];
+
+
+//Obtain the slave rvalid for master read
+wire s_rvalid [5:0];
+assign s_rvalid[5] = S5_RVALID;
+assign s_rvalid[4] = S4_RVALID;
+assign s_rvalid[3] = S3_RVALID;
+assign s_rvalid[2] = S2_RVALID;
+assign s_rvalid[1] = S1_RVALID;
+assign s_rvalid[0] = S0_RVALID;
+
+assign r_valid = s_rvalid[rd_slave_no];
+
+//Obtain the slave rdata for master read
+wire[`AXI_DATA_WIDTH - 1 : 0] s_rdata [5:0];
+assign s_rdata[5] = S5_RDATA;
+assign s_rdata[4] = S4_RDATA;
+assign s_rdata[3] = S3_RDATA;
+assign s_rdata[2] = S2_RDATA;
+assign s_rdata[1] = S1_RDATA;
+assign s_rdata[0] = S0_RDATA;
+
+assign r_data = s_rdata[rd_slave_no];
+
+//Assign the granted master signals to selected slave
+reg  s_arvalid[5:0];
+reg [`AXI_ADDR_WIDTH - 1 : 0] s_araddr[5:0];
+reg  s_rready[5:0];
+
+always @*
+begin
+	for (i=0; i<6; i=i+1)
+	begin
+		if(i==rd_slave_no)
+		begin
+			s_arvalid[i] = arvalid;
+			s_araddr[i]  = araddr;
+			s_rready[i]  = rready;
+		end
+		else
+		begin
+			s_arvalid[i] = 1'b0;
+			s_araddr[i]  = {`AXI_ADDR_WIDTH{1'b0}};
+			s_rready[i]  = 1'b0;
+		end
+	end
+end
+
+//ARVALID
+assign S0_ARVALID = s_arvalid[0];
+assign S1_ARVALID = s_arvalid[1];
+assign S2_ARVALID = s_arvalid[2];
+assign S3_ARVALID = s_arvalid[3];
+assign S4_ARVALID = s_arvalid[4];
+assign S5_ARVALID = s_arvalid[5];
+
+
+//ARADDR
+assign S0_ARADDR = s_araddr[0];
+assign S1_ARADDR = s_araddr[1];
+assign S2_ARADDR = s_araddr[2];
+assign S3_ARADDR = s_araddr[3];
+assign S4_ARADDR = s_araddr[4];
+assign S5_ARADDR = s_araddr[5];
+
+//RREADY
+assign S0_RREADY = s_rready[0];
+assign S1_RREADY = s_rready[1];
+assign S2_RREADY = s_rready[2];
+assign S3_RREADY = s_rready[3];
+assign S4_RREADY = s_rready[4];
+assign S5_RREADY = s_rready[5];
+
 
 
 endmodule
