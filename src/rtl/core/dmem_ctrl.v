@@ -72,6 +72,7 @@ input wire data_dtcm_read_data_valid,				//DTCM read data valid
 output wire DAHB_access,					//DAHB access
 output wire DAHB_rd0_wr1,					//DAHB cmd read: 0 write:1
 output wire [2:0] DAHB_size,					//DAHB size 
+output wire [3:0] DAXI_byte_strobe,				//DAXI byte strobe
 output wire [`DATA_WIDTH - 1 : 0] DAHB_write_data,		//DAHB write data
 output wire [`ADDR_WIDTH - 1 : 0] DAHB_addr,			//DAHB access address
 input wire DAHB_trans_buffer_full,				//DAHB transfer buffer full
@@ -222,6 +223,7 @@ assign DAHB_rd0_wr1 		= rd0_wr1;
 assign DAHB_write_data 		= mem_write_data;
 assign DAHB_addr 		= mem_addr_mem;
 assign DAHB_size 		= mem_B_mem ? 3'b000 : (mem_H_mem ? 3'b001 : 3'b010);
+assign DAXI_byte_strobe 	= mem_byte_strobe;
 
 //------------------//
 //Load 

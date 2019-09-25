@@ -9,21 +9,21 @@
  distributed under the License is distributed on an "AS IS" BASIS,       
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and     
- limitations under the License.      
+ limitations under the License.  
 */
 
 //==============================================================||
-// File Name: 		IAXI.v					||
+// File Name: 		DAXI.v					||
 // Author:    		Kitty Wang				||
 // Description: 						||
-//	      		instruction AXI IF                	|| 
+//	      		data AXI interface                	|| 
 // History:   							||
 //                      2019/9/25 				||
 //                      First version				||
 //===============================================================
 
 `include "top_defines.vh"
-module IAXI (
+module DAXI (
 //AXI4-lite master memory interface
 //AXI4-lite global signal
 input ACLK,						
@@ -60,16 +60,16 @@ input [1:0]				RRESP,
 
 
 //with core interface
-input 				cpu_clk,		
-input 				cpu_resetn,		
-input  				itcm_auto_load,
-input   [`ADDR_WIDTH - 1 : 0 ] 	itcm_auto_load_addr,
-input  				IAXI_access,		
-input   [`ADDR_WIDTH - 1 : 0] 	IAXI_addr,
-output  			IAXI_ready,
-output  [`DATA_WIDTH - 1 : 0] 	IAXI_read_data,
-output  			IAXI_read_data_valid
-
+	input wire cpu_clk,
+	input wire cpu_resetn,
+	input wire DAXI_access,	
+	input wire [3:0] DAXI_byte_strobe,
+	input wire DAXI_rd0_wr1,
+	input wire [`DATA_WIDTH - 1 : 0]  DAXI_write_data,
+	input wire [`ADDR_WIDTH - 1 : 0] DAXI_addr,
+	output wire DAXI_trans_buffer_full,
+	output wire [`DATA_WIDTH - 1 : 0] DAXI_read_data,
+	output wire DAXI_read_data_valid
 );
 
 wire				M_access;		
@@ -83,7 +83,7 @@ wire				read_data_valid_M;
 wire [1:0]			resp_M;			
 
 
-axi_master IAXI_M (
+axi_master DAXI_M (
 .ACLK			(ACLK			),
 .ARESETn		(ARESETn		),					
 .AWVALID		(AWVALID		),
@@ -119,15 +119,14 @@ axi_master IAXI_M (
 );
 
 
-assign M_access = itcm_auto_load || IAXI_access;
-assign M_write_strobe = {`AXI_STRB_WIDTH{1'b0}};
-assign M_rd0_wr1 = 1'b0;
-assign M_addr = itcm_auto_load? itcm_auto_load_addr : IAXI_addr ;
-assign M_write_data = {`AXI_DATA_WIDTH{1'b0}};
-assign IAXI_ready = ready_M;
-assign IAXI_read_data_valid = read_data_valid_M;
-assign IAXI_read_data = read_data_M;
-
+assign M_access = DAXI_access;
+assign M_write_strobe = DAXI_byte_strobe;
+assign M_rd0_wr1 = DAXI_rd0_wr1;
+assign M_addr = DAXI_addr;
+assign M_write_data = DAXI_write_data;
+assign DAXI_trans_buffer_full = !ready_M;
+assign DAXI_read_data_valid = read_data_valid_M;
+assign DAXI_read_data = read_data_M;
 
 
 endmodule
