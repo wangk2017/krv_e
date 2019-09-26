@@ -153,6 +153,7 @@ apb u_apb(
     .PWRITES		(PWRITES	)
 );
 //uart
+/*
 uart uart_0(
     .PADDR		(PADDRS[4:0]),
     .PCLK		(HCLK),
@@ -169,5 +170,5 @@ uart uart_0(
     .UART_INT		()
 );
 assign PRDATAS1[31:8] = 24'h0;
-
+*/
 endmodule

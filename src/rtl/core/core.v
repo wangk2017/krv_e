@@ -55,21 +55,21 @@ module core (
 	input  wire [`DATA_WIDTH - 1 : 0] data_dtcm_read_data,		//data interface access DTCM read data		
 	input  wire data_dtcm_read_data_valid,				//data interface access DTCM read data valid	
 
-//with IAHB
-	output wire IAHB_access,					//IAHB access 
-	output wire [`ADDR_WIDTH - 1 : 0] IAHB_addr,			//IAHB access address         	
-	input  wire [`DATA_WIDTH - 1 : 0] IAHB_read_data,		//IAHB access read data
-	input  wire IAHB_read_data_valid,				//IAHB access read data valid
+//with IAXI
+	output wire IAXI_access,					//IAXI access 
+	output wire [`ADDR_WIDTH - 1 : 0] IAXI_addr,			//IAXI access address         	
+	input  wire [`DATA_WIDTH - 1 : 0] IAXI_read_data,		//IAXI access read data
+	input  wire IAXI_read_data_valid,				//IAXI access read data valid
 
-//with DAHB
-	output wire DAHB_access,					//DAHB access 	
-	output wire DAHB_rd0_wr1,					//DAHB access cmd 0: read; 1: write	
-	output wire [2:0] DAHB_size,					//DAHB access byte strobe
-	output wire [`DATA_WIDTH - 1 : 0]  DAHB_write_data,		//DAHB access write data
-	output wire [`ADDR_WIDTH - 1 : 0] DAHB_addr,			//DAHB access address	
-	input  wire DAHB_trans_buffer_full,				//DAHB access transfer buffer full
-	input  wire [`DATA_WIDTH - 1 : 0] DAHB_read_data,		//DAHB access read data
-	input  wire DAHB_read_data_valid				//DAHB access read data valid	
+//with DAXI
+	output wire DAXI_access,					//DAXI access 	
+	output wire DAXI_rd0_wr1,					//DAXI access cmd 0: read; 1: write	
+	output wire [2:0] DAXI_size,					//DAXI access byte strobe
+	output wire [`DATA_WIDTH - 1 : 0]  DAXI_write_data,		//DAXI access write data
+	output wire [`ADDR_WIDTH - 1 : 0] DAXI_addr,			//DAXI access address	
+	input  wire DAXI_trans_buffer_full,				//DAXI access transfer buffer full
+	input  wire [`DATA_WIDTH - 1 : 0] DAXI_read_data,		//DAXI access read data
+	input  wire DAXI_read_data_valid				//DAXI access read data valid	
 
 `ifdef KRV_HAS_DBG
 //debug interface
@@ -280,10 +280,10 @@ imem_ctrl u_imem_ctrl(
 .instr_itcm_read_data		(instr_itcm_read_data),
 .instr_itcm_read_data_valid	(instr_itcm_read_data_valid),
 .itcm_auto_load			(itcm_auto_load),
-.IAHB_access			(IAHB_access),	
-.IAHB_addr			(IAHB_addr),
-.IAHB_read_data			(IAHB_read_data),
-.IAHB_read_data_valid		(IAHB_read_data_valid)
+.IAXI_access			(IAXI_access),	
+.IAXI_addr			(IAXI_addr),
+.IAXI_read_data			(IAXI_read_data),
+.IAXI_read_data_valid		(IAXI_read_data_valid)
 );
 //-----------------------------------------------------//
 //fetch
@@ -533,14 +533,14 @@ dmem_ctrl u_dmem_ctrl (
 .data_dtcm_read_data		(data_dtcm_read_data),
 .data_dtcm_read_data_valid	(data_dtcm_read_data_valid),
 
-.DAHB_access			(DAHB_access),
-.DAHB_rd0_wr1			(DAHB_rd0_wr1),	
-.DAHB_size			(DAHB_size),
-.DAHB_write_data		(DAHB_write_data),
-.DAHB_addr			(DAHB_addr),
-.DAHB_trans_buffer_full		(DAHB_trans_buffer_full),
-.DAHB_read_data			(DAHB_read_data),
-.DAHB_read_data_valid		(DAHB_read_data_valid)
+.DAXI_access			(DAXI_access),
+.DAXI_rd0_wr1			(DAXI_rd0_wr1),	
+.DAXI_size			(DAXI_size),
+.DAXI_write_data		(DAXI_write_data),
+.DAXI_addr			(DAXI_addr),
+.DAXI_trans_buffer_full		(DAXI_trans_buffer_full),
+.DAXI_read_data			(DAXI_read_data),
+.DAXI_read_data_valid		(DAXI_read_data_valid)
 
 );
 

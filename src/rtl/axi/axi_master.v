@@ -235,7 +235,7 @@ assign WSTRB	= wstrb_r;
 assign BREADY	= bready_r;
 assign ARVALID	= arvalid_r;			
 assign ARADDR	= araddr_r;
-assign ARPROT	= aprot_r;
+assign ARPROT	= arprot_r;
 assign RREADY	= rready_r;
 
 assign ready_M = state == IDLE;

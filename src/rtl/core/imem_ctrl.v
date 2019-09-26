@@ -41,11 +41,11 @@ input wire [`INSTR_WIDTH - 1 : 0] instr_itcm_read_data,	//ITCM read data
 input wire instr_itcm_read_data_valid,			//ITCM read data valid
 input wire itcm_auto_load,			//ITCM is in auto-load process
 
-//interface with IAHB
-output wire IAHB_access,				//IAHB access 
-output wire [`ADDR_WIDTH - 1 : 0] IAHB_addr,		//IAHB access address
-input wire [`INSTR_WIDTH - 1 : 0] IAHB_read_data,	//IAHB read data
-input wire IAHB_read_data_valid				//IAHB read data valid
+//interface with IAXI
+output wire IAXI_access,				//IAXI access 
+output wire [`ADDR_WIDTH - 1 : 0] IAXI_addr,		//IAXI access address
+input wire [`INSTR_WIDTH - 1 : 0] IAXI_read_data,	//IAXI read data
+input wire IAXI_read_data_valid				//IAXI read data valid
 );
 
 
@@ -62,23 +62,23 @@ assign addr_itcm =(next_pc >= `ITCM_START_ADDR) && (next_pc < `ITCM_START_ADDR +
 assign addr_itcm = 1'b0;
 `endif
 
-wire addr_AHB;
-assign addr_AHB = ~(addr_itcm);
+wire addr_AXI;
+assign addr_AXI = ~(addr_itcm);
 
 reg addr_itcm_r;
-reg addr_AHB_r;
+reg addr_AXI_r;
 
 always @ (posedge cpu_clk or negedge cpu_rstn)
 begin
 	if(!cpu_rstn)
 	begin
 		addr_itcm_r <= 1'b0;
-		addr_AHB_r <= 1'b0;
+		addr_AXI_r <= 1'b0;
 	end
 	else
 	begin
 		addr_itcm_r <= addr_itcm;
-		addr_AHB_r <= addr_AHB;
+		addr_AXI_r <= addr_AXI;
 	end
 end
 
@@ -88,14 +88,14 @@ end
 assign instr_itcm_access = addr_itcm;
 assign instr_itcm_addr = next_pc;
 
-assign IAHB_access = addr_AHB_r;
-assign IAHB_addr = pc;
+assign IAXI_access = addr_AXI_r;
+assign IAXI_addr = pc;
  
 //---------------------------------------------//
 //read data MUX 
 //---------------------------------------------//
 assign instr_read_data = ({`INSTR_WIDTH{(addr_itcm_r & instr_itcm_read_data_valid)}} & instr_itcm_read_data)
-			|({`INSTR_WIDTH{(!itcm_auto_load & addr_AHB_r &  IAHB_read_data_valid)}} & IAHB_read_data);
-assign instr_read_data_valid = (addr_itcm_r && instr_itcm_read_data_valid) || (!itcm_auto_load && addr_AHB_r && IAHB_read_data_valid);
+			|({`INSTR_WIDTH{(!itcm_auto_load & addr_AXI_r &  IAXI_read_data_valid)}} & IAXI_read_data);
+assign instr_read_data_valid = (addr_itcm_r && instr_itcm_read_data_valid) || (!itcm_auto_load && addr_AXI_r && IAXI_read_data_valid);
 
 endmodule

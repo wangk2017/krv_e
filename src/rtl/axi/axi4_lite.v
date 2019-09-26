@@ -254,7 +254,7 @@ output [2:0]				S5_ARPROT,
 input 					S5_RVALID,
 output					S5_RREADY,
 input [`AXI_DATA_WIDTH - 1 : 0]		S5_RDATA,
-input [1:0]				S5_RRESP,
+input [1:0]				S5_RRESP
 
 
 );
@@ -299,7 +299,7 @@ begin
 		end
 		else if(!wr_idle)
 		begin
-			wr_timeout_cnt <= wr_timeout_cnt + 4'h1
+			wr_timeout_cnt <= wr_timeout_cnt + 4'h1;
 		end
 		else 
 		begin
@@ -362,7 +362,7 @@ begin
 	WR_BRDY: begin
 		if(wr_timeout)
 		wr_next_state = WR_IDLE;
-		else if(w_bvalid && bready)
+		else if(b_valid && bready)
 		wr_next_state = WR_IDLE;
 		else
 		wr_next_state = WR_BRDY;
@@ -672,7 +672,6 @@ wire rd_idle;
 //--------------------------------------------------------------------//
 //add a rd_timeout counter to avoid bus lock 
 //--------------------------------------------------------------------//
-parameter TIMEOUT = 15;
 reg[3:0] rd_timeout_cnt;
 wire rd_timeout = (rd_timeout_cnt == TIMEOUT);
 
@@ -690,7 +689,7 @@ begin
 		end
 		else if(!rd_idle)
 		begin
-			rd_timeout_cnt <= rd_timeout_cnt + 4'h1
+			rd_timeout_cnt <= rd_timeout_cnt + 4'h1;
 		end
 		else 
 		begin

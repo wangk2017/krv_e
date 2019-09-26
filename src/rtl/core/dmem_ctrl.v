@@ -68,16 +68,16 @@ output wire [`ADDR_WIDTH - 1 : 0] data_dtcm_addr,		//DTCM access address
 input wire [`DATA_WIDTH - 1 : 0] data_dtcm_read_data,		//DTCM read data
 input wire data_dtcm_read_data_valid,				//DTCM read data valid
 
-//interface with DAHB block
-output wire DAHB_access,					//DAHB access
-output wire DAHB_rd0_wr1,					//DAHB cmd read: 0 write:1
-output wire [2:0] DAHB_size,					//DAHB size 
+//interface with DAXI block
+output wire DAXI_access,					//DAXI access
+output wire DAXI_rd0_wr1,					//DAXI cmd read: 0 write:1
+output wire [2:0] DAXI_size,					//DAXI size 
 output wire [3:0] DAXI_byte_strobe,				//DAXI byte strobe
-output wire [`DATA_WIDTH - 1 : 0] DAHB_write_data,		//DAHB write data
-output wire [`ADDR_WIDTH - 1 : 0] DAHB_addr,			//DAHB access address
-input wire DAHB_trans_buffer_full,				//DAHB transfer buffer full
-input wire [`DATA_WIDTH - 1 : 0] DAHB_read_data,		//DAHB read data
-input wire DAHB_read_data_valid					//DAHB read data valid
+output wire [`DATA_WIDTH - 1 : 0] DAXI_write_data,		//DAXI write data
+output wire [`ADDR_WIDTH - 1 : 0] DAXI_addr,			//DAXI access address
+input wire DAXI_trans_buffer_full,				//DAXI transfer buffer full
+input wire [`DATA_WIDTH - 1 : 0] DAXI_read_data,		//DAXI read data
+input wire DAXI_read_data_valid					//DAXI read data valid
 );
 
 
@@ -110,7 +110,7 @@ assign mem_access = (load_mem || store_mem) && (!load_wait_data_r);
 
 //wire addr_itcm;
 wire addr_dtcm;
-wire addr_AHB;
+wire addr_AXI;
 
 `ifdef KRV_HAS_DTCM
 assign addr_dtcm = dtcm_en && (mem_addr_mem >= dtcm_start_addr) && (mem_addr_mem < (dtcm_start_addr + `DTCM_SIZE));
@@ -118,23 +118,23 @@ assign addr_dtcm = dtcm_en && (mem_addr_mem >= dtcm_start_addr) && (mem_addr_mem
 assign addr_dtcm = 1'b0;
 `endif
 
-assign addr_AHB = ~(addr_dtcm );
+assign addr_AXI = ~(addr_dtcm );
 
 //reg addr_itcm_r;
 reg addr_dtcm_r;
-reg addr_AHB_r;
+reg addr_AXI_r;
 
 always @ (posedge cpu_clk or negedge cpu_rstn)
 begin
 	if(!cpu_rstn)
 	begin
 		addr_dtcm_r <= 1'b0;
-		addr_AHB_r <= 1'b0;
+		addr_AXI_r <= 1'b0;
 	end
 	else
 	begin
 		addr_dtcm_r <= addr_dtcm;
-		addr_AHB_r <= addr_AHB;
+		addr_AXI_r <= addr_AXI;
 	end
 end
 
@@ -218,18 +218,18 @@ assign data_dtcm_write_data 	= mem_write_data;
 assign data_dtcm_addr 		= mem_addr_mem - dtcm_start_addr;
 assign data_dtcm_byte_strobe 	= mem_byte_strobe;
 
-assign DAHB_access 		= mem_access && addr_AHB; 
-assign DAHB_rd0_wr1 		= rd0_wr1;
-assign DAHB_write_data 		= mem_write_data;
-assign DAHB_addr 		= mem_addr_mem;
-assign DAHB_size 		= mem_B_mem ? 3'b000 : (mem_H_mem ? 3'b001 : 3'b010);
+assign DAXI_access 		= mem_access && addr_AXI; 
+assign DAXI_rd0_wr1 		= rd0_wr1;
+assign DAXI_write_data 		= mem_write_data;
+assign DAXI_addr 		= mem_addr_mem;
+assign DAXI_size 		= mem_B_mem ? 3'b000 : (mem_H_mem ? 3'b001 : 3'b010);
 assign DAXI_byte_strobe 	= mem_byte_strobe;
 
 //------------------//
 //Load 
 //------------------//
 wire [`DATA_WIDTH - 1 : 0] mem_read_data;
-assign mem_read_data = data_dtcm_read_data_valid ? data_dtcm_read_data : (DAHB_read_data_valid ? DAHB_read_data : (/*data_itcm_read_data_valid ? data_itcm_read_data :*/ {`DATA_WIDTH{1'b0}}));
+assign mem_read_data = data_dtcm_read_data_valid ? data_dtcm_read_data : (DAXI_read_data_valid ? DAXI_read_data : (/*data_itcm_read_data_valid ? data_itcm_read_data :*/ {`DATA_WIDTH{1'b0}}));
 
 wire load_data_sign_bit;
 assign load_data_sign_bit = mem_byte_strobe_r[3]? mem_read_data[31] : 
@@ -308,7 +308,7 @@ begin
 
 end
 
-assign mem_wb_data_valid = (addr_dtcm_r && data_dtcm_read_data_valid) | (addr_AHB_r && DAHB_read_data_valid)/* | (addr_itcm_r &&  data_itcm_read_data_valid)*/;
+assign mem_wb_data_valid = (addr_dtcm_r && data_dtcm_read_data_valid) | (addr_AXI_r && DAXI_read_data_valid)/* | (addr_itcm_r &&  data_itcm_read_data_valid)*/;
 
  
 //--------------------------------------------//
@@ -413,7 +413,7 @@ begin
 end
 
 wire load_stall = (load_mem & (!mem_wb_data_valid));
-wire store_stall = (store_mem && ((addr_AHB && DAHB_trans_buffer_full) || (addr_dtcm && !data_dtcm_ready)));
+wire store_stall = (store_mem && ((addr_AXI && DAXI_trans_buffer_full) || (addr_dtcm && !data_dtcm_ready)));
 
 wire dmem_stall =  (load_stall || store_stall);
 assign mem_ready = !dmem_stall && wb_ready;

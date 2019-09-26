@@ -36,13 +36,13 @@ module dtcm (
 	output reg data_dtcm_rdata_valid,			//read data valid
 
 	//with core instruction interface
-	input AHB_dtcm_access,					//access signal
-	input AHB_tcm_rd0_wr1,					//access cmd, rd=0;wr=1
-	input wire [3:0] AHB_tcm_byte_strobe,			//write strobe
-	input [`ADDR_WIDTH - 1 : 0] AHB_tcm_addr,		//address
-	input wire [`DATA_WIDTH - 1 : 0] AHB_tcm_wdata,		//write data
-	output wire [`DATA_WIDTH - 1 : 0] AHB_dtcm_rdata,	//read data
-	output reg AHB_dtcm_rdata_valid,			//read data valid
+	input AXI_dtcm_access,					//access signal
+	input AXI_tcm_rd0_wr1,					//access cmd, rd=0;wr=1
+	input wire [3:0] AXI_tcm_byte_strobe,			//write strobe
+	input [`ADDR_WIDTH - 1 : 0] AXI_tcm_addr,		//address
+	input wire [`DATA_WIDTH - 1 : 0] AXI_tcm_wdata,		//write data
+	output wire [`DATA_WIDTH - 1 : 0] AXI_dtcm_rdata,	//read data
+	output reg AXI_dtcm_rdata_valid,			//read data valid
 
 	//with DMA
 	input dma_dtcm_access,					//access signal	
@@ -66,12 +66,12 @@ module dtcm (
 	wire [`DATA_WIDTH - 1 : 0] dtcm_wdata;	
 	wire [3:0] dtcm_byte_strobe;
 
-	assign dtcm_access = data_dtcm_access || dma_dtcm_access || AHB_dtcm_access;
-	assign dtcm_rd0_wr1 = data_dtcm_rd0_wr1 || dma_dtcm_rd0_wr1 || AHB_tcm_rd0_wr1;
+	assign dtcm_access = data_dtcm_access || dma_dtcm_access || AXI_dtcm_access;
+	assign dtcm_rd0_wr1 = data_dtcm_rd0_wr1 || dma_dtcm_rd0_wr1 || AXI_tcm_rd0_wr1;
 	assign dtcm_wen = dtcm_access & dtcm_rd0_wr1;
-	assign dtcm_addr = dma_dtcm_access? dma_dtcm_addr : (data_dtcm_access? data_dtcm_addr : AHB_tcm_addr);
-	assign dtcm_wdata = dma_dtcm_access? dma_dtcm_wdata : (data_dtcm_access ? data_dtcm_wdata : AHB_tcm_wdata);
-	assign dtcm_byte_strobe = data_dtcm_access ? data_dtcm_byte_strobe : AHB_tcm_byte_strobe;
+	assign dtcm_addr = dma_dtcm_access? dma_dtcm_addr : (data_dtcm_access? data_dtcm_addr : AXI_tcm_addr);
+	assign dtcm_wdata = dma_dtcm_access? dma_dtcm_wdata : (data_dtcm_access ? data_dtcm_wdata : AXI_tcm_wdata);
+	assign dtcm_byte_strobe = data_dtcm_access ? data_dtcm_byte_strobe : AXI_tcm_byte_strobe;
 
 	assign data_dtcm_ready = (!(dma_dtcm_access && dma_dtcm_rd0_wr1)) || (!data_dtcm_rd0_wr1 && (!(dma_dtcm_access && dma_dtcm_rd0_wr1 && (dma_dtcm_addr == data_dtcm_addr))));
 	assign dma_dtcm_ready = dma_dtcm_access;
@@ -137,11 +137,11 @@ always @ (posedge clk or negedge rstn)
 begin
 	if(!rstn)
 	begin
-		AHB_dtcm_rdata_valid <= 1'b0;
+		AXI_dtcm_rdata_valid <= 1'b0;
 	end
 	else
 	begin
-		AHB_dtcm_rdata_valid <= AHB_dtcm_access && !data_dtcm_access;
+		AXI_dtcm_rdata_valid <= AXI_dtcm_access && !data_dtcm_access;
 	end
 end
 
@@ -162,7 +162,7 @@ end
 
 assign data_dtcm_rdata = dtcm_rdata;
 
-assign AHB_dtcm_rdata = dtcm_rdata;
+assign AXI_dtcm_rdata = dtcm_rdata;
 
 assign dma_dtcm_rdata = dtcm_rdata;
 

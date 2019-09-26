@@ -22,17 +22,41 @@
 
 // uart
 module uart(
-// APB signals
-input  [4:0] PADDR,
-input        PCLK,
-input        PENABLE,
-input        PRESETN,
-input        PSEL,
-input  [7:0] PWDATA,
-input        PWRITE,
-output [7:0] PRDATA,
-output       PREADY,
-output	     PSLVERR,
+//AXI4-lite slave memory interface
+//AXI4-lite global signal
+input ACLK,						
+input ARESETn,						
+
+//AXI4-lite Write Address Channel
+input 					AWVALID,	
+output  				AWREADY,	
+input [`AXI_ADDR_WIDTH - 1 : 0] 	AWADDR,
+input [2:0]				AWPROT,
+
+//AXI4-lite Write Data Channel
+input 					WVALID,
+output  				WREADY,
+input [`AXI_DATA_WIDTH - 1 : 0] 	WDATA,
+input [`AXI_STRB_WIDTH - 1 : 0]		WSTRB,
+
+//AXI4-lite Write Response Channel
+output					BVALID,
+input 					BREADY,
+output [1:0]				BRESP,
+
+//AXI4-lite Read Address Channel
+input 					ARVALID,			
+output					ARREADY,
+input [`AXI_ADDR_WIDTH - 1 : 0]		ARADDR,
+input [2:0]				ARPROT,
+
+//AXI4-lite Read Data Channel
+output 					RVALID,
+input					RREADY,
+output [`AXI_DATA_WIDTH - 1 : 0]	RDATA,
+output [1:0]				RRESP,
+
+
 // UART signals
 input        RX,
 output       TX,
@@ -58,16 +82,27 @@ wire 		rx_sample_pulse;
 
 //UART registers
 uart_regs u_uart_regs (
-.PADDR				(PADDR		),
-.PCLK				(PCLK		),
-.PENABLE			(PENABLE	),
-.PRESETN			(PRESETN	),
-.PSEL				(PSEL		),
-.PWDATA				(PWDATA		),
-.PWRITE				(PWRITE		),
-.PRDATA				(PRDATA		),
-.PREADY				(PREADY		),
-.PSLVERR			(PSLVERR	),
+.ACLK			(ACLK			),						
+.ARESETn		(ARESETn		),						
+.AWVALID		(AWVALID		),	
+.AWREADY		(AWREADY		),	
+.AWADDR			(AWADDR			),
+.AWPROT			(AWPROT			),
+.WVALID			(WVALID			),
+.WREADY			(WREADY			),
+.WDATA			(WDATA			),
+.WSTRB			(WSTRB			),
+.BVALID			(BVALID			),
+.BREADY			(BREADY			),
+.BRESP			(BRESP			),
+.ARVALID		(ARVALID		),			
+.ARREADY		(ARREADY		),
+.ARADDR			(ARADDR			),
+.ARPROT			(ARPROT			),
+.RVALID			(RVALID			),
+.RREADY			(RREADY			),
+.RDATA			(RDATA			),
+.RRESP			(RRESP			),
 .tx_data_reg_wr			(tx_data_reg_wr		),
 .tx_data			(tx_data		),
 .rx_data			(rx_data		),

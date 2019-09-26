@@ -27,8 +27,8 @@ module axi_slave (
 
 //AXI4-lite slave memory interface
 //AXI4-lite global signal
-input ACLK,						//AXI clock
-input ARESETn,						//AXI reset, active low
+input ACLK,						
+input ARESETn,						
 
 //AXI4-lite Write Address Channel
 input 					AWVALID,	
@@ -66,10 +66,10 @@ input wire 				ip_read_data_valid,
 output reg [`AHB_ADDR_WIDTH - 1 : 0] 	ip_addr,
 output wire [`AHB_DATA_WIDTH - 1 : 0] 	ip_write_data,
 output wire [3:0] 			ip_byte_strobe,
-output reg 				valid_reg_access,
-output reg 				ip_wr1_rd0
+output wire 				valid_reg_write,
+output reg 				valid_reg_read
 
-)
+);
 
 assign AWREADY = 1'b1;
 assign WREADY  = 1'b1;
@@ -105,32 +105,29 @@ begin
 	if(!ARESETn)
 	begin
 		ip_addr <= {`AXI_ADDR_WIDTH{1'b0}};
-		ip_wr1_rd0 <= 1'b0;
-		valid_reg_access <= 1'b0;
+		valid_reg_read <= 1'b0;
 	end
 	else
 	begin
 		if(AWVALID)
 		begin
 			ip_addr <= AWADDR;
-			ip_wr1_rd0 <= 1'b1;
-			valid_reg_access <= 1'b1;
+			valid_reg_read <= 1'b0;
 		end
 		else if(ARVALID)
 		begin
 			ip_addr <= ARADDR;
-			ip_wr1_rd0 <= 1'b0;
-			valid_reg_access <= 1'b1;
+			valid_reg_read <= 1'b1;
 		end
 		else
 		begin
 			ip_addr <= {`AXI_ADDR_WIDTH{1'b0}};
-			ip_wr1_rd0 <= 1'b0;
-			valid_reg_access <= 1'b0;
+			valid_reg_read <= 1'b0;
 		end
 	end
 end
 
+assign valid_reg_write = WVALID;
 assign ip_write_data = WVALID ? WDATA : {`AXI_DATA_WIDTH{1'b0}};
 assign ip_byte_strobe = WVALID ? WSTRB : {`AXI_STRB_WIDTH{1'b0}};
 

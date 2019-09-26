@@ -7,100 +7,107 @@
 //                      2017/9/26 				||
 //                      First version				||
 //===============================================================
-`include "ahb_defines.vh"
+`include "top_defines.vh"
 module flash_sim(
-	input wire HCLK,
-	input wire HRESETn,
-	input wire HSEL,
-	input wire [`AHB_ADDR_WIDTH - 1 : 0] HADDR,
-	input wire [2:0] HSIZE,
-	input wire HWRITE,
-	input wire [`AHB_DATA_WIDTH - 1 : 0] HWDATA,
-	output wire HREADY,
-	output reg [`AHB_DATA_WIDTH - 1 : 0] HRDATA
+//AXI4-lite slave memory interface
+//AXI4-lite global signal
+input ACLK,						
+input ARESETn,						
+
+//AXI4-lite Write Address Channel
+input 					AWVALID,	
+output  				AWREADY,	
+input [`AXI_ADDR_WIDTH - 1 : 0] 	AWADDR,
+input [2:0]				AWPROT,
+
+//AXI4-lite Write Data Channel
+input 					WVALID,
+output  				WREADY,
+input [`AXI_DATA_WIDTH - 1 : 0] 	WDATA,
+input [`AXI_STRB_WIDTH - 1 : 0]		WSTRB,
+
+//AXI4-lite Write Response Channel
+output					BVALID,
+input 					BREADY,
+output [1:0]				BRESP,
+
+//AXI4-lite Read Address Channel
+input 					ARVALID,			
+output					ARREADY,
+input [`AXI_ADDR_WIDTH - 1 : 0]		ARADDR,
+input [2:0]				ARPROT,
+
+//AXI4-lite Read Data Channel
+output 					RVALID,
+input					RREADY,
+output [`AXI_DATA_WIDTH - 1 : 0]	RDATA,
+output [1:0]				RRESP
 );
 
 reg [`AHB_DATA_WIDTH - 1 : 0] mem [81919:0];
+//AXI4-lite slave interface
+wire [`AHB_DATA_WIDTH - 1 : 0] 	ip_read_data;
+wire 				ip_read_data_valid;
+wire [`AHB_ADDR_WIDTH - 1 : 0] 	ip_addr;
+wire [`AHB_DATA_WIDTH - 1 : 0] 	ip_write_data;
+wire [3:0] 			ip_byte_strobe;
+wire 				valid_reg_write;
+wire 				valid_reg_read;
 
-reg [31:0] ip_addr;
-reg wr1_rd0;
-reg access;
-reg [2:0] size;
-
-always @ (posedge HCLK)
-begin
-	if(!HRESETn)
-	begin
-		ip_addr <= 0;
-		wr1_rd0 <= 0;
-		access <= 0;
-		size <= 0;
-	end
-	else if(HSEL)
-	begin
-		ip_addr <= HADDR;
-		wr1_rd0 <= HWRITE;
-		access <= 1;
-		size <= HSIZE;
-	end
-	else
-	begin
-		access <= 0;
-	end
-end
+axi_slave axi_slave_uart(
+.ACLK			(ACLK			),						
+.ARESETn		(ARESETn		),						
+.AWVALID		(AWVALID		),	
+.AWREADY		(AWREADY		),	
+.AWADDR			(AWADDR			),
+.AWPROT			(AWPROT			),
+.WVALID			(WVALID			),
+.WREADY			(WREADY			),
+.WDATA			(WDATA			),
+.WSTRB			(WSTRB			),
+.BVALID			(BVALID			),
+.BREADY			(BREADY			),
+.BRESP			(BRESP			),
+.ARVALID		(ARVALID		),			
+.ARREADY		(ARREADY		),
+.ARADDR			(ARADDR			),
+.ARPROT			(ARPROT			),
+.RVALID			(RVALID			),
+.RREADY			(RREADY			),
+.RDATA			(RDATA			),
+.RRESP			(RRESP			),
+.ip_read_data		(ip_read_data		),
+.ip_read_data_valid	(ip_read_data_valid	),
+.ip_addr		(ip_addr		),
+.ip_write_data		(ip_write_data		),
+.ip_byte_strobe		(ip_byte_strobe		),
+.valid_reg_write	(valid_reg_write	),
+.valid_reg_read		(valid_reg_read		)
+);
 
 
 wire [19:2] HADDR_wr = ip_addr[19:2];
 
-wire[1:0] mem_wr_strobe = ip_addr[1:0];
-wire [31:0] mem_1013f = mem[65855];
 
-always @ (posedge HCLK)
+always @ (posedge ACLK)
 begin
-	if(access && wr1_rd0)
+	if(valid_reg_write)
 	begin
-		case (mem_wr_strobe)
-		2'b00: 
-		begin
-			case(size)
-			3'b010: mem[HADDR_wr] <= HWDATA;
-			3'b001: mem[HADDR_wr][15:0] <= HWDATA[15:0];
-			3'b000: mem[HADDR_wr][7:0] <= HWDATA[7:0];
-			endcase
-		end
-		2'b01: 
-		begin
-			case(size)
-			3'b010: mem[HADDR_wr][31:8] <= HWDATA[31:8];
-			3'b001: mem[HADDR_wr][23:8] <= HWDATA[23:8];
-			3'b000: mem[HADDR_wr][15:8] <= HWDATA[15:8];
-			endcase
-		end
-		2'b10:
-		begin
-			case(size)
-			3'b010,001: mem[HADDR_wr][31:16] <= HWDATA[31:16];
-			3'b000: mem[HADDR_wr][23:16] <= HWDATA[23:16];
-			endcase
-		end
-		2'b11: mem[HADDR_wr][31:24] <= HWDATA[31:24];
-		endcase
+		if(ip_byte_strobe[3])
+		 	mem[HADDR_wr][31:24] <= ip_write_data[31:24];
+		if(ip_byte_strobe[2])
+		 	mem[HADDR_wr][23:16] <= ip_write_data[23:16];
+		if(ip_byte_strobe[1])
+			mem[HADDR_wr][15:8] <= ip_write_data[15:8];
+		if(ip_byte_strobe[0])
+			mem[HADDR_wr][7:0] <= ip_write_data[7:0];
 	end
 end
 
 
-wire [19:2] HADDR_rd = HADDR[19:2];
+wire [19:2] HADDR_rd = ip_addr[19:2];
 
-always @ (posedge HCLK)
-begin
-	if(HSEL && !HWRITE)
-	begin
-		HRDATA <= mem[HADDR_rd];
-	end
-end
-
-
-assign HREADY = 1;
-
+assign ip_read_data = valid_reg_read ? mem[HADDR_rd] : 32'h0;
+assign ip_read_data_valid = valid_reg_read;
 
 endmodule

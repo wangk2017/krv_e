@@ -14,6 +14,7 @@
 `include "user_config.vh"
 `include "core_defines.vh"
 `include "kplic_defines.vh"
+`include "axi_defines.vh"
 `include "ahb_defines.vh"
 `include "dbg_defines.vh"
 
