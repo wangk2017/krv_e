@@ -64,7 +64,7 @@ module core (
 //with DAXI
 	output wire DAXI_access,					//DAXI access 	
 	output wire DAXI_rd0_wr1,					//DAXI access cmd 0: read; 1: write	
-	output wire [2:0] DAXI_size,					//DAXI access byte strobe
+	output wire [3:0] DAXI_byte_strobe,				//DAXI access byte strobe
 	output wire [`DATA_WIDTH - 1 : 0]  DAXI_write_data,		//DAXI access write data
 	output wire [`ADDR_WIDTH - 1 : 0] DAXI_addr,			//DAXI access address	
 	input  wire DAXI_trans_buffer_full,				//DAXI access transfer buffer full
@@ -535,7 +535,7 @@ dmem_ctrl u_dmem_ctrl (
 
 .DAXI_access			(DAXI_access),
 .DAXI_rd0_wr1			(DAXI_rd0_wr1),	
-.DAXI_size			(DAXI_size),
+.DAXI_byte_strobe		(DAXI_byte_strobe),
 .DAXI_write_data		(DAXI_write_data),
 .DAXI_addr			(DAXI_addr),
 .DAXI_trans_buffer_full		(DAXI_trans_buffer_full),

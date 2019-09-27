@@ -71,7 +71,6 @@ input wire data_dtcm_read_data_valid,				//DTCM read data valid
 //interface with DAXI block
 output wire DAXI_access,					//DAXI access
 output wire DAXI_rd0_wr1,					//DAXI cmd read: 0 write:1
-output wire [2:0] DAXI_size,					//DAXI size 
 output wire [3:0] DAXI_byte_strobe,				//DAXI byte strobe
 output wire [`DATA_WIDTH - 1 : 0] DAXI_write_data,		//DAXI write data
 output wire [`ADDR_WIDTH - 1 : 0] DAXI_addr,			//DAXI access address

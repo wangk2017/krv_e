@@ -26,6 +26,9 @@ krv_e DUT (
 	end
 	
 wire [31:0] dec_pc = DUT.u_core.u_fetch.pc_dec;
+wire uart_tx_wr = DUT.u_uart.tx_data_reg_wr;
+wire[7:0] uart_tx_data = DUT.u_uart.tx_data;
+
 
 `ifdef PG_TEST
 `include "pg_sr.v"

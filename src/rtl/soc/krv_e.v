@@ -89,6 +89,7 @@ wire dma_dtcm_rdata_valid;
 
 	wire IAXI_ready;
 	wire itcm_auto_load;
+	wire itcm_access_AXI;
 	wire [`ADDR_WIDTH - 1 : 0 ] itcm_auto_load_addr;
 
 	wire data_itcm_access;
@@ -227,6 +228,8 @@ wire 					AWVALID_S0;
 wire 					WVALID_S0;	
 wire 					ARVALID_S0;	
 wire[`AXI_DATA_WIDTH - 1 : 0]		RDATA_S0;
+wire					RVALID_S0;
+wire  					BVALID_S0;
 wire 					AWVALID_flash;	
 wire 					AWREADY_flash;	
 wire [`AXI_ADDR_WIDTH - 1 : 0] 		AWADDR_flash;
@@ -451,7 +454,7 @@ core u_core (
 
 	.DAXI_access				(DAXI_access),	
 	.DAXI_rd0_wr1				(DAXI_rd0_wr1),
-	.DAXI_size				(DAXI_size),
+	.DAXI_byte_strobe			(DAXI_byte_strobe),
 	.DAXI_write_data			(DAXI_write_data),
 	.DAXI_addr				(DAXI_addr),
 	.DAXI_trans_buffer_full			(DAXI_trans_buffer_full),
@@ -496,18 +499,20 @@ tcm_decoder u_tcm_decoder (
 	.WREADY			(WREADY_flash		),
 	.WDATA			(WDATA_flash		),
 	.WSTRB			(WSTRB_flash		),
-	.BVALID			(BVALID_flash		),
+	.BVALID			(BVALID_S0		),
 	.BREADY			(BREADY_flash		),
 	.BRESP			(BRESP_flash		),
 	.ARVALID		(ARVALID_S0		),			
 	.ARREADY		(ARREADY_flash		),
 	.ARADDR			(ARADDR_flash		),
 	.ARPROT			(ARPROT_flash		),
-	.RVALID			(RVALID_flash		),
+	.RVALID			(RVALID_S0		),
 	.RREADY			(RREADY_flash		),
 	.RDATA			(RDATA_S0		),
 	.RRESP			(RRESP_flash		),
 
+	.BVALID_flash			(BVALID_flash		),
+	.RVALID_flash			(RVALID_flash		),
 	.RDATA_flash			(RDATA_flash),
 	.AWVALID_flash			(AWVALID_flash),
 	.ARVALID_flash			(ARVALID_flash),
@@ -547,6 +552,7 @@ itcm u_itcm(
 	.IAXI_read_data	(IAXI_read_data),
 	.IAXI_read_data_valid	(IAXI_read_data_valid),
 	.itcm_auto_load	(itcm_auto_load),
+	.itcm_access_AXI		(itcm_access_AXI),
 	.itcm_auto_load_addr	(itcm_auto_load_addr)
 
 );
@@ -626,7 +632,7 @@ IAXI u_IAXI_master(
 
 	.cpu_clk	(cpu_clk_g),
 	.cpu_resetn	(cpu_rstn),
-	.itcm_auto_load	(itcm_auto_load),
+	.itcm_access_AXI		(itcm_access_AXI),
 	.itcm_auto_load_addr	(itcm_auto_load_addr),
 	.IAXI_access	(IAXI_access),	
 	.IAXI_addr	(IAXI_addr),
@@ -750,14 +756,14 @@ axi4_lite u_axi4_lite (
 	.S0_WREADY		(WREADY_flash		),
 	.S0_WDATA		(WDATA_flash		),
 	.S0_WSTRB		(WSTRB_flash		),
-	.S0_BVALID		(BVALID_flash		),
+	.S0_BVALID		(BVALID_S0		),
 	.S0_BREADY		(BREADY_flash		),
 	.S0_BRESP		(BRESP_flash		),
 	.S0_ARVALID		(ARVALID_S0		),			
 	.S0_ARREADY		(ARREADY_flash		),
 	.S0_ARADDR		(ARADDR_flash		),
 	.S0_ARPROT		(ARPROT_flash		),
-	.S0_RVALID		(RVALID_flash		),
+	.S0_RVALID		(RVALID_S0		),
 	.S0_RREADY		(RREADY_flash		),
 	.S0_RDATA		(RDATA_S0		),
 	.S0_RRESP		(RRESP_flash		),

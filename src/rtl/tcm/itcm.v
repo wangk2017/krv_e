@@ -61,7 +61,8 @@ output reg AXI_itcm_read_data_valid,
 	input wire [`DATA_WIDTH - 1 : 0] IAXI_read_data,	//IAXI read data
 	input wire IAXI_read_data_valid,			//IAXI read data valid
 	output reg itcm_auto_load,				//ITCM is in the process of auto load
-	output reg[`ADDR_WIDTH - 1 : 0 ] itcm_auto_load_addr	//ITCM auto load address
+	output reg itcm_access_AXI,				//ITCM is in the process of auto load
+	output [`ADDR_WIDTH - 1 : 0 ] itcm_auto_load_addr	//ITCM auto load address
 
 );
 
@@ -143,27 +144,32 @@ always @ (posedge clk or negedge rstn)
 begin
 	if(!rstn)
 	begin
-		itcm_auto_load_addr <= `ITCM_START_ADDR;
+	//	itcm_auto_load_addr <= `ITCM_START_ADDR;
+		itcm_access_AXI <= 1'b0;
 	end
 	else
 	begin
 		if(itcm_auto_load_addr ==`ITCM_START_ADDR + `ITCM_SIZE - 4)
 		begin
-			itcm_auto_load_addr <=`ITCM_START_ADDR + `ITCM_SIZE - 4; 
+	//		itcm_auto_load_addr <=`ITCM_START_ADDR + `ITCM_SIZE - 4; 
+			itcm_access_AXI <= 1'b0;
 		end
 		else if(addr_s)
 		begin
 			if(IAXI_ready)
 			begin
-				itcm_auto_load_addr <= itcm_auto_load_addr + 32'h4;
+	//			itcm_auto_load_addr <= itcm_auto_write_addr + 32'h4;
+				itcm_access_AXI <= 1'b1;
 			end
 			else
 			begin
-				itcm_auto_load_addr <= itcm_auto_load_addr;
+	//			itcm_auto_load_addr <= itcm_auto_load_addr;
+				itcm_access_AXI <= 1'b0;
 			end
 		end
 	end
 end
+
 
 wire itcm_write_en;
 wire[`ADDR_WIDTH - 1 : 0 ] itcm_write_addr;
@@ -201,6 +207,8 @@ begin
 		end
 	end
 end
+
+assign itcm_auto_load_addr = !itcm_auto_load ? (`ITCM_START_ADDR + `ITCM_SIZE - 4) : itcm_auto_write_addr;
 
 //------------------------------------------------------------------------------//
 //ITCM read/write operation

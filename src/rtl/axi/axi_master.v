@@ -238,7 +238,7 @@ assign ARADDR	= araddr_r;
 assign ARPROT	= arprot_r;
 assign RREADY	= rready_r;
 
-assign ready_M = state == IDLE;
+assign ready_M = (next_state == IDLE);
 assign resp_M = ((state == RRDY) && RVALID) ? RRESP : (((state == BRDY) && BVALID) ? BRESP: 2'h0);
 assign read_data_M = (state == RRDY) && RVALID ? RDATA : {`AXI_DATA_WIDTH{1'b0}};
 assign read_data_valid_M = (state == RRDY) && RVALID;

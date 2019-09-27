@@ -1,5 +1,3 @@
-wire uart_tx_wr = DUT.m_apb.uart_0.tx_data_reg_wr;
-wire[7:0] uart_tx_data = DUT.m_apb.uart_0.tx_data;
 
 //Play a trick to let the simulation run faster
 
@@ -10,7 +8,7 @@ $display ("=====================================================================
 $display ("Here is a trick to force the baud rate higher to make the simulation faster \n");
 $display ("you can turn off the trick in tb/zephyr_phil_debug.v by comment the force \n");
 $display ("=========================================================================== \n");
-force DUT.m_apb.uart_0.uart_0.baud_val = 13'h4;
+force DUT.u_uart.baud_val = 13'h4;
 end
 
 

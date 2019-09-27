@@ -73,7 +73,7 @@ output reg 				valid_reg_read
 
 assign AWREADY = 1'b1;
 assign WREADY  = 1'b1;
-assign ARREADY = ip_read_data_valid;
+assign ARREADY = 1'b1;
 assign RVALID  = ip_read_data_valid;
 assign RDATA   = ip_read_data;
 assign RRESP   = `OKAY;

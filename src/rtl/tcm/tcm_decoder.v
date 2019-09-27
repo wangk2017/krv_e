@@ -72,6 +72,8 @@ input wire AXI_dtcm_read_data_valid,
 output wire AWVALID_flash,
 output wire WVALID_flash,
 output wire ARVALID_flash,
+input wire BVALID_flash,
+input wire RVALID_flash,
 input wire [`DATA_WIDTH - 1 : 0] RDATA_flash
 
 );
@@ -121,6 +123,9 @@ axi_slave axi_slave_uart(
 
 wire valid_reg_access = valid_reg_read || valid_reg_write;
 assign AXI_tcm_addr  =  ip_addr;
+assign AXI_tcm_rd0_wr1 = valid_reg_write;
+assign AXI_tcm_write_data = ip_write_data;
+assign AXI_tcm_byte_strobe = ip_byte_strobe;
 
 `ifdef KRV_HAS_ITCM
 assign AXI_itcm_access = (!itcm_auto_load) && valid_reg_access && (AXI_tcm_addr >= `ITCM_START_ADDR) && (AXI_tcm_addr < `ITCM_START_ADDR + `ITCM_SIZE); 
@@ -157,7 +162,7 @@ begin
 end
 
 assign ip_read_data = AXI_dtcm_access_r ? AXI_dtcm_read_data : (AXI_itcm_access_r ? AXI_itcm_read_data : RDATA_flash);
-assign ip_read_data_valid = (AXI_dtcm_access || AXI_dtcm_access_r ) ? AXI_dtcm_read_data_valid : ((AXI_itcm_access || AXI_itcm_access_r)? AXI_itcm_read_data_valid : valid_reg_access);
+assign ip_read_data_valid = (AXI_dtcm_access || AXI_dtcm_access_r ) ? AXI_dtcm_read_data_valid : ((AXI_itcm_access || AXI_itcm_access_r)? AXI_itcm_read_data_valid : RVALID_flash);
 
 assign AWVALID_flash = AWVALID && (!(ip_addr_itcm_range || ip_addr_dtcm_range));
 assign WVALID_flash = WVALID && (!(ip_addr_itcm_range || ip_addr_dtcm_range));

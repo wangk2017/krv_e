@@ -333,7 +333,7 @@ always @ *
 begin
 	case (wr_state)
 	WR_IDLE:  begin
-			if(|aw_grant_i)
+			if(|aw_req)
 			begin
 				if(aw_ready)
 				wr_next_state = WR_WVLD;
@@ -397,7 +397,7 @@ begin
 			aw_grant_i = 2'b10;
 		end
 		default: begin
-			aw_grant_i = 2'b11;
+			aw_grant_i = 2'b00;
 		end
 		endcase
 	end
@@ -411,7 +411,7 @@ always @(posedge ACLK or negedge ARESETn)
 begin
 	if(!ARESETn)
 	begin
-		aw_grant_r <= 2'b11;
+		aw_grant_r <= 2'b00;
 	end
 	else
 	begin
@@ -722,7 +722,7 @@ always @ *
 begin
 	case (rd_state)
 	RD_IDLE:  begin
-			if(|ar_grant_i)
+			if(|ar_req)
 			begin
 				if(ar_ready)
 				rd_next_state = RD_RRDY;
@@ -774,7 +774,7 @@ begin
 			ar_grant_i = 2'b10;
 		end
 		default: begin
-			ar_grant_i = 2'b11;
+			ar_grant_i = 2'b00;
 		end
 		endcase
 	end
@@ -788,7 +788,7 @@ always @(posedge ACLK or negedge ARESETn)
 begin
 	if(!ARESETn)
 	begin
-		ar_grant_r <= 2'b11;
+		ar_grant_r <= 2'b00;
 	end
 	else
 	begin
@@ -797,6 +797,7 @@ begin
 end
 
 wire [1:0] ar_grant = rd_idle ? ar_grant_i : ar_grant_r;
+
 
 //Obtain the granted master read valid
 wire  m_arvalid[2:0];
@@ -818,7 +819,6 @@ assign m_rready[2] = M2_RREADY;
 assign m_rready[1] = M1_RREADY;
 assign m_rready[0] = M0_RREADY;
 assign rready = m_rready[ar_grant];
-
 
 
 //assign the selected slave signals to the granted master
@@ -922,21 +922,23 @@ reg  s_arvalid[5:0];
 reg [`AXI_ADDR_WIDTH - 1 : 0] s_araddr[5:0];
 reg  s_rready[5:0];
 
+integer z;
+
 always @*
 begin
-	for (i=0; i<6; i=i+1)
+	for (z=0; z<6; z=z+1)
 	begin
-		if(i==rd_slave_no)
+		if(z==rd_slave_no)
 		begin
-			s_arvalid[i] = arvalid;
-			s_araddr[i]  = araddr;
-			s_rready[i]  = rready;
+			s_arvalid[z] = arvalid;
+			s_araddr[z]  = araddr;
+			s_rready[z]  = rready;
 		end
 		else
 		begin
-			s_arvalid[i] = 1'b0;
-			s_araddr[i]  = {`AXI_ADDR_WIDTH{1'b0}};
-			s_rready[i]  = 1'b0;
+			s_arvalid[z] = 1'b0;
+			s_araddr[z]  = {`AXI_ADDR_WIDTH{1'b0}};
+			s_rready[z]  = 1'b0;
 		end
 	end
 end
@@ -965,7 +967,6 @@ assign S2_RREADY = s_rready[2];
 assign S3_RREADY = s_rready[3];
 assign S4_RREADY = s_rready[4];
 assign S5_RREADY = s_rready[5];
-
 
 
 endmodule

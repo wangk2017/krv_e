@@ -62,7 +62,7 @@ input [1:0]				RRESP,
 //with core interface
 input 				cpu_clk,		
 input 				cpu_resetn,		
-input  				itcm_auto_load,
+input  				itcm_access_AXI,
 input   [`ADDR_WIDTH - 1 : 0 ] 	itcm_auto_load_addr,
 input  				IAXI_access,		
 input   [`ADDR_WIDTH - 1 : 0] 	IAXI_addr,
@@ -119,10 +119,10 @@ axi_master IAXI_M (
 );
 
 
-assign M_access = itcm_auto_load || IAXI_access;
+assign M_access = itcm_access_AXI || IAXI_access;
 assign M_write_strobe = {`AXI_STRB_WIDTH{1'b0}};
 assign M_rd0_wr1 = 1'b0;
-assign M_addr = itcm_auto_load? itcm_auto_load_addr : IAXI_addr ;
+assign M_addr = itcm_access_AXI ? itcm_auto_load_addr : IAXI_addr ;
 assign M_write_data = {`AXI_DATA_WIDTH{1'b0}};
 assign IAXI_ready = ready_M;
 assign IAXI_read_data_valid = read_data_valid_M;
