@@ -105,3 +105,16 @@ begin
 	endcase
 end
 
+wire [31:0] mem_addr = DUT.u_core.u_dmem_ctrl.mem_addr_mem;
+wire [31:0] mem_wdata = DUT.u_core.u_dmem_ctrl.store_data_mem;
+wire  mem_wr = DUT.u_core.u_dmem_ctrl.store_mem;
+always @(posedge DUT.cpu_clk)
+begin
+	if((mem_addr == 32'h400a0) && mem_wr)
+	begin
+			$display ("write addr 400a0");
+			$display ("@time %t  !",$time);
+			$display ("\n");
+			$display ("write_data=  %d  !",mem_wdata);
+	end
+end
