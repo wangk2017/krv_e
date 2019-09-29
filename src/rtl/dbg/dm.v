@@ -19,27 +19,43 @@
 // History:   		2019.05.12				||
 //                      First version				||
 //===============================================================
-`include "core_defines.vh"
-`include "dbg_defines.vh"
+`include "top_defines.vh"
 
 module dm(
-//system_bus_access IF
-input wire HCLK,
-input wire HRESETn,
-input wire HGRANT,
-input wire HREADY,
-input wire [1:0] HRESP,
-input wire [`AHB_DATA_WIDTH - 1 : 0] HRDATA,
-output wire HBUSREQ,
-output wire HLOCK,
-output wire [1:0] HTRANS,
-output wire [`AHB_ADDR_WIDTH - 1 : 0] HADDR,
-output wire HWRITE,
-output wire [2:0] HSIZE,
-output wire [2:0] HBURST,
-output wire [3:0] HPROT,
-output wire [`AHB_DATA_WIDTH - 1 : 0] HWDATA,
+//AXI4-lite master memory interface
+//AXI4-lite global signal
 
+input ACLK,						
+input ARESETn,						
+
+//AXI4-lite Write Address Channel
+output 					AWVALID,	
+input  					AWREADY,	
+output [`AXI_ADDR_WIDTH - 1 : 0] 	AWADDR,
+output [2:0]				AWPROT,
+
+//AXI4-lite Write Data Channel
+output 					WVALID,
+input  					WREADY,
+output [`AXI_DATA_WIDTH - 1 : 0] 	WDATA,
+output [`AXI_STRB_WIDTH - 1 : 0]	WSTRB,
+
+//AXI4-lite Write Response Channel
+input					BVALID,
+output 					BREADY,
+input [1:0]				BRESP,
+
+//AXI4-lite Read Address Channel
+output 					ARVALID,			
+input					ARREADY,
+output [`AXI_ADDR_WIDTH - 1 : 0]	ARADDR,
+output [2:0]				ARPROT,
+
+//AXI4-lite Read Data Channel
+input 					RVALID,
+output					RREADY,
+input [`AXI_DATA_WIDTH - 1 : 0]		RDATA,
+input [1:0]				RRESP,
 
 //global signals
 input				sys_clk,
@@ -144,21 +160,27 @@ abs_cmd u_abs_cmd(
 //system_bus_access
 
 system_bus_access u_system_bus_access (
-	.HCLK		(HCLK),
-	.HRESETn	(HRESETn),
-	.HBUSREQ	(HBUSREQ),
-	.HGRANT		(HGRANT),
-	.HREADY		(HREADY),
-	.HRESP		(HRESP),
-	.HRDATA		(HRDATA),
-	.HLOCK		(HLOCK),
-	.HTRANS		(HTRANS),
-	.HADDR		(HADDR),
-	.HWRITE		(HWRITE),
-	.HSIZE		(HSIZE),
-	.HBURST		(HBURST),
-	.HPROT		(HPROT),
-	.HWDATA		(HWDATA),
+.ACLK			(ACLK			),
+.ARESETn		(ARESETn		),					
+.AWVALID		(AWVALID		),
+.AWREADY		(AWREADY		),
+.AWADDR			(AWADDR			),
+.AWPROT			(AWPROT			),
+.WVALID			(WVALID			),
+.WREADY			(WREADY			),
+.WDATA			(WDATA			),
+.WSTRB			(WSTRB			),
+.BVALID			(BVALID			),
+.BREADY			(BREADY			),
+.BRESP			(BRESP			),
+.ARVALID		(ARVALID		),			
+.ARREADY		(ARREADY		),
+.ARADDR			(ARADDR			),
+.ARPROT			(ARPROT			),
+.RVALID			(RVALID			),
+.RREADY			(RREADY			),
+.RDATA			(RDATA			),
+.RRESP			(RRESP			),
 .sys_clk		(sys_clk		),
 .sys_rstn		(sys_rstn		),
 .sbaddress0		(sbaddress0		),

@@ -19,7 +19,9 @@
 // History:   		2019.05.12				||
 //                      First version				||
 //===============================================================
-`include "dbg_defines.vh"
+
+`include "top_defines.vh"
+
 
 module dtm(
 

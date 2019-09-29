@@ -129,19 +129,23 @@ assign AXI_tcm_byte_strobe = ip_byte_strobe;
 
 `ifdef KRV_HAS_ITCM
 assign AXI_itcm_access = (!itcm_auto_load) && valid_reg_access && (AXI_tcm_addr >= `ITCM_START_ADDR) && (AXI_tcm_addr < `ITCM_START_ADDR + `ITCM_SIZE); 
-wire ip_addr_itcm_range = (!itcm_auto_load) && (ip_addr >= `ITCM_START_ADDR) && (ip_addr < `ITCM_START_ADDR + `ITCM_SIZE);
+wire itcm_wr_range = (!itcm_auto_load) && (AWADDR >= `ITCM_START_ADDR) && (AWADDR < `ITCM_START_ADDR + `ITCM_SIZE);
+wire itcm_rd_range = (!itcm_auto_load) && (ARADDR >= `ITCM_START_ADDR) && (ARADDR < `ITCM_START_ADDR + `ITCM_SIZE);
 `else
 assign AXI_itcm_access = 1'b0;
-wire ip_addr_itcm_range = 1'b0;
+wire itcm_wr_range = 1'b0;
+wire itcm_rd_range = 1'b0;
 `endif
 
 
 `ifdef KRV_HAS_DTCM
 assign AXI_dtcm_access = valid_reg_access &&  (AXI_tcm_addr >= `DTCM_START_ADDR) && (AXI_tcm_addr < `DTCM_START_ADDR + `DTCM_SIZE); 
-wire ip_addr_dtcm_range = (ip_addr >= `DTCM_START_ADDR) && (ip_addr < `DTCM_START_ADDR + `DTCM_SIZE);
+wire dtcm_wr_range = (!itcm_auto_load) && (AWADDR >= `DTCM_START_ADDR) && (AWADDR < `DTCM_START_ADDR + `DTCM_SIZE);
+wire dtcm_rd_range = (!itcm_auto_load) && (ARADDR >= `DTCM_START_ADDR) && (ARADDR < `DTCM_START_ADDR + `DTCM_SIZE);
 `else
 assign AXI_dtcm_access = 1'b0;
-wire ip_addr_dtcm_range = 1'b0;
+wire dtcm_wr_range = 1'b0;
+wire dtcm_rd_range = 1'b0;
 `endif
 
 reg AXI_dtcm_access_r;
@@ -164,8 +168,8 @@ end
 assign ip_read_data = AXI_dtcm_access_r ? AXI_dtcm_read_data : (AXI_itcm_access_r ? AXI_itcm_read_data : RDATA_flash);
 assign ip_read_data_valid = (AXI_dtcm_access || AXI_dtcm_access_r ) ? AXI_dtcm_read_data_valid : ((AXI_itcm_access || AXI_itcm_access_r)? AXI_itcm_read_data_valid : RVALID_flash);
 
-assign AWVALID_flash = AWVALID && (!(ip_addr_itcm_range || ip_addr_dtcm_range));
-assign WVALID_flash = WVALID && (!(ip_addr_itcm_range || ip_addr_dtcm_range));
-assign ARVALID_flash = ARVALID && (!(ip_addr_itcm_range || ip_addr_dtcm_range));
+assign AWVALID_flash = AWVALID && (!(itcm_wr_range || dtcm_wr_range));
+assign WVALID_flash = WVALID && (!(itcm_wr_range || dtcm_wr_range));
+assign ARVALID_flash = ARVALID && (!(itcm_rd_range || dtcm_rd_range));
 
 endmodule

@@ -21,7 +21,9 @@
 // History:   							 ||
 //===============================================================||
 
-`include "kplic_defines.vh"
+`include "top_defines.vh"
+
+
 module kplic_gateway (
 
 //global signals

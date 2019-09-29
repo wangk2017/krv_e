@@ -20,29 +20,48 @@
 // History:   							 ||
 //===============================================================||
 
-`include "ahb_defines.vh"
-`include "kplic_defines.vh"
+`include "top_defines.vh"
 
 module kplic (
+//AXI4-lite slave memory interface
+//AXI4-lite global signal
+input ACLK,						
+input ARESETn,						
 
-//global signals
+//AXI4-lite Write Address Channel
+input 					AWVALID,	
+output  				AWREADY,	
+input [`AXI_ADDR_WIDTH - 1 : 0] 	AWADDR,
+input [2:0]				AWPROT,
+
+//AXI4-lite Write Data Channel
+input 					WVALID,
+output  				WREADY,
+input [`AXI_DATA_WIDTH - 1 : 0] 	WDATA,
+input [`AXI_STRB_WIDTH - 1 : 0]		WSTRB,
+
+//AXI4-lite Write Response Channel
+output					BVALID,
+input 					BREADY,
+output [1:0]				BRESP,
+
+//AXI4-lite Read Address Channel
+input 					ARVALID,			
+output					ARREADY,
+input [`AXI_ADDR_WIDTH - 1 : 0]		ARADDR,
+input [2:0]				ARPROT,
+
+//AXI4-lite Read Data Channel
+output 					RVALID,
+input					RREADY,
+output [`AXI_DATA_WIDTH - 1 : 0]	RDATA,
+output [1:0]				RRESP,
+
+//kplic signals
 input wire kplic_clk,				//KPLIC clock
 input wire kplic_rstn,				//KPLIC reset, active low
 input wire [`INT_NUM - 1 : 0] external_int,	//external interrupt sources
-output wire kplic_int,				//interrupt notification to core
-
-//AHB INTERFACE
-input wire HCLK,
-input wire HRESETn,
-input wire HSEL,
-input wire [`AHB_ADDR_WIDTH - 1 : 0] HADDR,
-input wire HWRITE,
-input wire [1:0] HTRANS,
-input wire [2:0] HBURST,
-input wire [`AHB_DATA_WIDTH - 1 : 0] HWDATA,
-output wire HREADY,
-output wire [1:0] HRESP,
-output wire [`AHB_DATA_WIDTH - 1 : 0] HRDATA
+output wire kplic_int				//interrupt notification to core
 );
 
 wire [`INT_NUM - 1 : 0] valid_int_req;
@@ -58,8 +77,6 @@ wire [`KPLIC_DATA_WIDTH - 1 : 0] int_priority_group6;
 wire [`KPLIC_DATA_WIDTH - 1 : 0] int_priority_group7;
 wire [`KPLIC_DATA_WIDTH - 1 : 0] int_pending_status;
 wire [`INT_WIDTH - 1 : 0] mppi;
-wire valid_reg_access;
-wire [`AHB_ADDR_WIDTH - 1 : 0] ip_addr;
 wire kplic_reg_wr1_rd0;
 wire [`KPLIC_DATA_WIDTH - 1 : 0] kplic_reg_write_data;
 wire [`KPLIC_DATA_WIDTH - 1 : 0] int_type;
@@ -67,36 +84,54 @@ wire [`KPLIC_DATA_WIDTH - 1 : 0] int_enable;
 wire [`INT_NUM - 1  : 0] int_completion;
 wire [`KPLIC_DATA_WIDTH - 1 : 0] kplic_reg_read_data;
 
+//AXI4-lite slave interface
+wire [`AXI_DATA_WIDTH - 1 : 0] 	ip_read_data;
+wire 				ip_read_data_valid;
+wire [`AXI_ADDR_WIDTH - 1 : 0] 	ip_addr;
+wire [`AXI_DATA_WIDTH - 1 : 0] 	ip_write_data;
+wire [3:0] 			ip_byte_strobe;
+wire 				valid_reg_write;
+wire 				valid_reg_read;
 
-ahb2regbus u_ahb2regbus(
-	//AHB IF
-	.HCLK			(kplic_clk),
-	.HRESETn		(kplic_rstn),
-	.HSEL			(HSEL),
-	.HADDR			(HADDR),
-	.HWRITE			(HWRITE),
-	.HTRANS			(HTRANS),
-	.HBURST			(HBURST),
-	.HWDATA			(HWDATA),
-	.HREADY			(HREADY),
-	.HRESP			(HRESP),
-	.HRDATA			(HRDATA),
-	//IP reg bus
-	.ip_read_data		(kplic_reg_read_data),
-	.ip_read_data_valid	(1'b1),
-	.ip_write_data		(kplic_reg_write_data),
-	.ip_addr		(ip_addr),
-	.valid_reg_access	(valid_reg_access),
-	.ip_wr1_rd0		(kplic_reg_wr1_rd0)
+axi_slave axi_slave_kplic(
+.ACLK			(ACLK			),						
+.ARESETn		(ARESETn		),						
+.AWVALID		(AWVALID		),	
+.AWREADY		(AWREADY		),	
+.AWADDR			(AWADDR			),
+.AWPROT			(AWPROT			),
+.WVALID			(WVALID			),
+.WREADY			(WREADY			),
+.WDATA			(WDATA			),
+.WSTRB			(WSTRB			),
+.BVALID			(BVALID			),
+.BREADY			(BREADY			),
+.BRESP			(BRESP			),
+.ARVALID		(ARVALID		),			
+.ARREADY		(ARREADY		),
+.ARADDR			(ARADDR			),
+.ARPROT			(ARPROT			),
+.RVALID			(RVALID			),
+.RREADY			(RREADY			),
+.RDATA			(RDATA			),
+.RRESP			(RRESP			),
+.ip_read_data		(ip_read_data		),
+.ip_read_data_valid	(ip_read_data_valid	),
+.ip_addr		(ip_addr		),
+.ip_write_data		(ip_write_data		),
+.ip_byte_strobe		(ip_byte_strobe		),
+.valid_reg_write	(valid_reg_write	),
+.valid_reg_read		(valid_reg_read		)
 );
+
 
  kplic_regs u_kplic_regs(
 .kplic_clk			(kplic_clk),
 .kplic_rstn			(kplic_rstn),
-.valid_reg_access		(valid_reg_access),
+.valid_reg_read			(valid_reg_read),
+.valid_reg_write		(valid_reg_write),
 .addr				(ip_addr[11:0]),
-.rd_wr				(kplic_reg_wr1_rd0),
-.write_data			(kplic_reg_write_data),
+.write_data			(ip_write_data),
 .int_pending_status		(int_pending_status),
 .mppi				(mppi),
 .int_type			(int_type),
@@ -112,7 +147,8 @@ ahb2regbus u_ahb2regbus(
 .int_priority_group7		(int_priority_group7),
 .int_claim			(int_claim),
 .int_completion			(int_completion),
-.read_data			(kplic_reg_read_data)
+.read_data			(ip_read_data),
+.read_data_valid		(ip_read_data_valid)
 );
 
 genvar int_index;

@@ -8,19 +8,18 @@
 //                      First version				 ||
 //===============================================================||
 
-`include "core_defines.vh"
-`include "ahb_defines.vh"
+`include "top_defines.vh"
 module core_timer_regs (
 //global signals
-input wire HCLK,						//AHB clock
-input wire HRESETn,						//AHB reset, active low
+input wire ACLK,						//AXI clock
+input wire ARESETn,						//AXI reset, active low
 
-//interface with AHB2regbus
-input wire valid_reg_access,					//valid reg access
+input wire valid_reg_write,					//valid reg write
+input wire valid_reg_read,					//valid reg read
 input wire [15:0] addr,						//reg access address
-input wire rd_wr,						//reg access cmd, wr=1; rd=0
-input wire [`AHB_DATA_WIDTH - 1 : 0] write_data,		//reg write data
-output wire [`AHB_DATA_WIDTH - 1 : 0] read_data,		//reg read data
+input wire [`AXI_DATA_WIDTH - 1 : 0] write_data,		//reg write data
+output wire [`AXI_DATA_WIDTH - 1 : 0] read_data,		//reg read data
+output wire read_data_valid,					//reg read data valid
 
 output reg timer_int
 
@@ -47,14 +46,10 @@ assign mtimecmp_h_sel = (addr == `MTIMECMP_ADDR + 4);
 //-------------------------------------------------------------------//
 //2: reg read / write
 //-------------------------------------------------------------------//
-wire valid_reg_read;
-wire valid_reg_write;
-assign valid_reg_read = valid_reg_access & !rd_wr;
-assign valid_reg_write = valid_reg_access & rd_wr;
 
-always @ (posedge HCLK or negedge HRESETn)
+always @ (posedge ACLK or negedge ARESETn)
 begin
-	if (!HRESETn)
+	if (!ARESETn)
 	begin
 		mtime <= 64'h0;
 	end
@@ -64,15 +59,15 @@ begin
 	end
 end
 
-wire [`AHB_DATA_WIDTH - 1 : 0] mtime_l_read_data;
-assign mtime_l_read_data = mtime_l_sel ? mtime_l : {`AHB_DATA_WIDTH{1'b0}};
+wire [`AXI_DATA_WIDTH - 1 : 0] mtime_l_read_data;
+assign mtime_l_read_data = mtime_l_sel ? mtime_l : {`AXI_DATA_WIDTH{1'b0}};
 
-wire [`AHB_DATA_WIDTH - 1 : 0] mtime_h_read_data;
-assign mtime_h_read_data = mtime_h_sel ? mtime_h : {`AHB_DATA_WIDTH{1'b0}};
+wire [`AXI_DATA_WIDTH - 1 : 0] mtime_h_read_data;
+assign mtime_h_read_data = mtime_h_sel ? mtime_h : {`AXI_DATA_WIDTH{1'b0}};
 
-always @ (posedge HCLK or negedge HRESETn)
+always @ (posedge ACLK or negedge ARESETn)
 begin
-	if (!HRESETn)
+	if (!ARESETn)
 	begin
 		mtimecmp_l <= 32'hffffffff;
 	end
@@ -88,12 +83,12 @@ begin
 		end
 	end
 end
-wire [`AHB_DATA_WIDTH - 1 : 0] mtimecmp_l_read_data;
-assign mtimecmp_l_read_data = mtimecmp_l_sel ? mtimecmp_l : {`AHB_DATA_WIDTH{1'b0}};
+wire [`AXI_DATA_WIDTH - 1 : 0] mtimecmp_l_read_data;
+assign mtimecmp_l_read_data = mtimecmp_l_sel ? mtimecmp_l : {`AXI_DATA_WIDTH{1'b0}};
 
-always @ (posedge HCLK or negedge HRESETn)
+always @ (posedge ACLK or negedge ARESETn)
 begin
-	if (!HRESETn)
+	if (!ARESETn)
 	begin
 		mtimecmp_h <= 32'hffffffff;
 	end
@@ -109,8 +104,8 @@ begin
 		end
 	end
 end
-wire [`AHB_DATA_WIDTH - 1 : 0] mtimecmp_h_read_data;
-assign mtimecmp_h_read_data = mtimecmp_h_sel ? mtimecmp_h : {`AHB_DATA_WIDTH{1'b0}};
+wire [`AXI_DATA_WIDTH - 1 : 0] mtimecmp_h_read_data;
+assign mtimecmp_h_read_data = mtimecmp_h_sel ? mtimecmp_h : {`AXI_DATA_WIDTH{1'b0}};
 
 
 
@@ -122,9 +117,11 @@ assign read_data = {32{valid_reg_read}} &
 		       mtimecmp_h_read_data 		
 );
 
-always @ (posedge HCLK or negedge HRESETn)
+assign read_data_valid = valid_reg_read;
+
+always @ (posedge ACLK or negedge ARESETn)
 begin
-	if (!HRESETn)
+	if (!ARESETn)
 	begin
 		timer_int <= 1'b0;
 	end

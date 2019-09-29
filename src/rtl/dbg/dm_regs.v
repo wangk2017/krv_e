@@ -19,8 +19,9 @@
 // History:   		2019.05.21				||
 //                      First version				||
 //===============================================================
-`include "core_defines.vh"
-`include "dbg_defines.vh"
+
+`include "top_defines.vh"
+
 
 module dm_regs(
 //global signals

@@ -15,11 +15,9 @@
 `include "core_defines.vh"
 `include "kplic_defines.vh"
 `include "axi_defines.vh"
-`include "ahb_defines.vh"
 `include "dbg_defines.vh"
 
 //Global defines
-`define SYNC_HCLK 1
 `define VECTOR_ENTRY 30'h0000_0000
 
 //power gating

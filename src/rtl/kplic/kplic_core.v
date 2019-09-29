@@ -20,7 +20,8 @@
 // History:   							 ||
 //===============================================================||
 
-`include "kplic_defines.vh"
+`include "top_defines.vh"
+
 module kplic_core (
 //global signals
 input wire kplic_clk,						//KPLIC clock

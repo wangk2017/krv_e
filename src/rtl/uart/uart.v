@@ -20,6 +20,8 @@
 //                      First version				||
 //===============================================================
 
+`include "top_defines.vh"
+
 // uart
 module uart(
 //AXI4-lite slave memory interface

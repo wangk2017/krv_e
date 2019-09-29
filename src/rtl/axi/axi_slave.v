@@ -61,10 +61,10 @@ output [1:0]				RRESP,
 
 
 //slave IP interface
-input wire [`AHB_DATA_WIDTH - 1 : 0] 	ip_read_data,
+input wire [`AXI_DATA_WIDTH - 1 : 0] 	ip_read_data,
 input wire 				ip_read_data_valid,
-output reg [`AHB_ADDR_WIDTH - 1 : 0] 	ip_addr,
-output wire [`AHB_DATA_WIDTH - 1 : 0] 	ip_write_data,
+output reg [`AXI_ADDR_WIDTH - 1 : 0] 	ip_addr,
+output wire [`AXI_DATA_WIDTH - 1 : 0] 	ip_write_data,
 output wire [3:0] 			ip_byte_strobe,
 output wire 				valid_reg_write,
 output reg 				valid_reg_read

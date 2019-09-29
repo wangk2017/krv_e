@@ -22,22 +22,40 @@
 `include "top_defines.vh"
 
 module system_bus_access(
-//AHB MASTER IF
-input wire HCLK,
-input wire HRESETn,
-input wire HGRANT,
-input wire HREADY,
-input wire [1:0] HRESP,
-input wire [`AHB_DATA_WIDTH - 1 : 0] HRDATA,
-output wire HBUSREQ,
-output wire HLOCK,
-output wire [1:0] HTRANS,
-output wire [`AHB_ADDR_WIDTH - 1 : 0] HADDR,
-output wire HWRITE,
-output wire [2:0] HSIZE,
-output wire [2:0] HBURST,
-output wire [3:0] HPROT,
-output wire [`AHB_DATA_WIDTH - 1 : 0] HWDATA,
+//AXI4-lite master memory interface
+//AXI4-lite global signal
+input ACLK,						
+input ARESETn,						
+
+//AXI4-lite Write Address Channel
+output 					AWVALID,	
+input  					AWREADY,	
+output [`AXI_ADDR_WIDTH - 1 : 0] 	AWADDR,
+output [2:0]				AWPROT,
+
+//AXI4-lite Write Data Channel
+output 					WVALID,
+input  					WREADY,
+output [`AXI_DATA_WIDTH - 1 : 0] 	WDATA,
+output [`AXI_STRB_WIDTH - 1 : 0]	WSTRB,
+
+//AXI4-lite Write Response Channel
+input					BVALID,
+output 					BREADY,
+input [1:0]				BRESP,
+
+//AXI4-lite Read Address Channel
+output 					ARVALID,			
+input					ARREADY,
+output [`AXI_ADDR_WIDTH - 1 : 0]	ARADDR,
+output [2:0]				ARPROT,
+
+//AXI4-lite Read Data Channel
+input 					RVALID,
+output					RREADY,
+input [`AXI_DATA_WIDTH - 1 : 0]		RDATA,
+input [1:0]				RRESP,
+
 
 //dm global clock
 input				sys_clk,
@@ -62,112 +80,62 @@ input				sbbusyerror_w1
 
 );
 
-
-parameter WAIT_FOR_GRANT_S 	= 2'b00;
-parameter ADDR_S		= 2'b01;
-parameter DATA_S		= 2'b10;
-
-
-//Ignore CDC as HCLK and sys_clk use the same clock source
-wire hwrite_i = sbdata0_update;
-wire hbusreq_i = sbdata0_rd || sbdata0_update || (sbaddress0_update && sbreadonaddr) && !sbbusy;
-wire [1:0] htrans_i = HGRANT ? `NONSEQ : `IDLE;
-wire [2:0] hsize_i = sbaccess;
-reg  [`DM_REG_WIDTH - 1 : 0]	sbdata0_r;
-always @ (posedge HCLK or negedge HRESETn)
-begin
-	if(!HRESETn)
-	begin
-		sbdata0_r <= 32'h0;
-	end
-	else
-	begin
-		sbdata0_r <= sbdata0;
-	end
-end
-
-assign HBUSREQ 	= hbusreq_i;
-assign HWRITE 	= hwrite_i;
-assign HTRANS 	= htrans_i;
-assign HADDR 	= sbaddress0;
-assign HWDATA 	= sbdata0_r;
-assign HSIZE 	= hsize_i;
-assign HBURST 	= 3'b000;
-assign HPROT 	= 4'b1111;
-
-assign system_bus_read_data_valid = (state == DATA_S) && HREADY && !hwrite_r;
-assign system_bus_read_data = HRDATA;
+wire				M_access;		
+wire				ready_M;		
+wire[3:0] 			M_write_strobe;		
+wire				M_rd0_wr1;		
+wire[`ADDR_WIDTH - 1 : 0]	M_addr;			
+wire[`DATA_WIDTH - 1 : 0]	M_write_data; 		
+wire [`DATA_WIDTH - 1 : 0]	read_data_M; 		
+wire				read_data_valid_M;	
+wire [1:0]			resp_M;			
 
 
-//AHB transfer FSM
-reg[1:0] state, next_state;
-reg hwrite_r;
-reg hwrite;
+axi_master DAXI_M (
+.ACLK			(ACLK			),
+.ARESETn		(ARESETn		),					
+.AWVALID		(AWVALID		),
+.AWREADY		(AWREADY		),
+.AWADDR			(AWADDR			),
+.AWPROT			(AWPROT			),
+.WVALID			(WVALID			),
+.WREADY			(WREADY			),
+.WDATA			(WDATA			),
+.WSTRB			(WSTRB			),
+.BVALID			(BVALID			),
+.BREADY			(BREADY			),
+.BRESP			(BRESP			),
+.ARVALID		(ARVALID		),			
+.ARREADY		(ARREADY		),
+.ARADDR			(ARADDR			),
+.ARPROT			(ARPROT			),
+.RVALID			(RVALID			),
+.RREADY			(RREADY			),
+.RDATA			(RDATA			),
+.RRESP			(RRESP			),
+.cpu_clk		(cpu_clk		),		
+.cpu_resetn		(cpu_resetn		),		
+.M_access		(M_access		),		
+.ready_M		(ready_M		),		
+.M_write_strobe		(M_write_strobe		),		
+.M_rd0_wr1		(M_rd0_wr1		),		
+.M_addr			(M_addr			),			
+.M_write_data		(M_write_data		), 		
+.read_data_M		(read_data_M		), 		
+.read_data_valid_M	(read_data_valid_M	),	
+.resp_M			(resp_M			)			
+);
 
 
-always @ (posedge HCLK or negedge HRESETn)
-begin
-	if(!HRESETn)
-	begin
-		state <= WAIT_FOR_GRANT_S;
-		hwrite_r <= 1'b0;
-	end
-	else
-	begin
-		state <= next_state;
-		hwrite_r <= hwrite;
-	end
-end
+assign M_access = (sbdata0_rd || sbdata0_update || (sbaddress0_update && sbreadonaddr)) && !sbbusy;
+assign M_write_strobe = 4'hf;
+assign M_rd0_wr1 = sbdata0_update;
+assign M_addr = sbaddress0;
+assign M_write_data = sbdata0;
 
-always @ *
-begin
-	case(state)
-		WAIT_FOR_GRANT_S: 
-		begin
-			if(HBUSREQ && HGRANT && HREADY)
-			begin
-				next_state = ADDR_S;
-				hwrite = hwrite_i;
-			end
-			else
-			begin
-				next_state = WAIT_FOR_GRANT_S;
-				hwrite = hwrite_r;
-			end
-		end
-		ADDR_S:
-		begin
-			hwrite = hwrite_i;
-			if(HREADY)
-			begin
-				next_state = DATA_S;
-			end
-			else
-			begin
-				next_state = ADDR_S;
-			end
-		end
-		DATA_S:
-		begin	
-			hwrite = hwrite_r;
-			if(HREADY)
-			begin
-				next_state = WAIT_FOR_GRANT_S;
-			end
-			else
-			begin
-				next_state = DATA_S;
-			end
-		end
-		default:
-		begin
-			hwrite = hwrite_r;
-			next_state = WAIT_FOR_GRANT_S;
-		end
-	endcase
-end
+assign system_bus_read_data_valid = read_data_valid_M;
+assign system_bus_read_data = read_data_M;
 
-assign sbbusy = (state != WAIT_FOR_GRANT_S);
 
 always @ (posedge sys_clk or negedge sys_rstn)
 begin
@@ -205,9 +173,9 @@ begin
 				sberror[i] <= 1'b0;
 			end
 		end
-		else if(hbusreq_i)
+		else if(M_access)
 		begin
-			if(hsize_i > 3'b10)
+			if(sbaccess > 3'b10)
 				sberror <= 3'h4;
 			else
 				sberror <= 3'h0;

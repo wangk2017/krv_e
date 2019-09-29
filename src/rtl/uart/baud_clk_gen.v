@@ -20,6 +20,9 @@
 //                      First version				||
 //===============================================================
 
+`include "top_defines.vh"
+
+
 module baud_clk_gen (
 input        	PCLK,
 input        	PRESETN,

@@ -22,6 +22,8 @@
 //			Use AXI4-lite to replace APB		||
 //===============================================================
 
+`include "top_defines.vh"
+
 module uart_regs(
 //AXI4-lite slave memory interface
 //AXI4-lite global signal
@@ -73,10 +75,10 @@ input 		overflow
 
 
 //AXI4-lite slave interface
-wire [`AHB_DATA_WIDTH - 1 : 0] 	ip_read_data;
+wire [`AXI_DATA_WIDTH - 1 : 0] 	ip_read_data;
 wire 				ip_read_data_valid;
-wire [`AHB_ADDR_WIDTH - 1 : 0] 	ip_addr;
-wire [`AHB_DATA_WIDTH - 1 : 0] 	ip_write_data;
+wire [`AXI_ADDR_WIDTH - 1 : 0] 	ip_addr;
+wire [`AXI_DATA_WIDTH - 1 : 0] 	ip_write_data;
 wire [3:0] 			ip_byte_strobe;
 wire 				valid_reg_write;
 wire 				valid_reg_read;

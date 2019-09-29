@@ -19,8 +19,9 @@
 // History:   		2019.05.23				||
 //                      First version				||
 //===============================================================
-`include "core_defines.vh"
-`include "dbg_defines.vh"
+
+`include "top_defines.vh"
+
 
 module abs_cmd(
 

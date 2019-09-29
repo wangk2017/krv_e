@@ -218,7 +218,7 @@ wire 					sb_ARVALID = 1'b0;
 wire  					sb_ARREADY;
 wire [`AXI_ADDR_WIDTH - 1 : 0]		sb_ARADDR   = {`AXI_ADDR_WIDTH{1'b0}};
 wire [2:0]				sb_ARPROT   = 3'h0;
-wire					sb_RVALID;
+wire					sb_RVALID   = 1'b1;
 wire					sb_RREADY   = 1'b0;
 wire[`AXI_DATA_WIDTH - 1 : 0]		sb_RDATA;
 wire[1:0]				sb_RRESP;
@@ -313,45 +313,45 @@ wire[`AXI_DATA_WIDTH - 1 : 0]		RDATA_uart;
 wire[1:0]				RRESP_uart;
 
 //reserved1
-wire 					AWVALID_reserved1;	
 wire 					AWREADY_reserved1 = 1'b1;	
+wire 					WREADY_reserved1  = 1'b1;
+wire  					BVALID_reserved1  = 1'b1;
+wire[1:0]				BRESP_reserved1   = 2'h0;
+wire  					ARREADY_reserved1 = 1'b1;
+wire					RVALID_reserved1  = 1'b1;
+wire[`AXI_DATA_WIDTH - 1 : 0]		RDATA_reserved1   = 32'h0;
+wire[1:0]				RRESP_reserved1   = 2'h0;
+wire 					AWVALID_reserved1;	
 wire [`AXI_ADDR_WIDTH - 1 : 0] 		AWADDR_reserved1;
 wire [2:0]				AWPROT_reserved1;
 wire 					WVALID_reserved1;
-wire 					WREADY_reserved1  = 1'b1;
 wire [`AXI_DATA_WIDTH - 1 : 0] 		WDATA_reserved1;
 wire [`AXI_STRB_WIDTH - 1 : 0]		WSTRB_reserved1;
-wire  					BVALID_reserved1  = 1'b1;
 wire 					BREADY_reserved1;
-wire[1:0]				BRESP_reserved1   = 2'h0;
 wire 					ARVALID_reserved1;			
-wire  					ARREADY_reserved1 = 1'b1;
 wire [`AXI_ADDR_WIDTH - 1 : 0]		ARADDR_reserved1;
 wire [2:0]				ARPROT_reserved1;
-wire					RVALID_reserved1  = 1'b0;
 wire					RREADY_reserved1;
-wire[`AXI_DATA_WIDTH - 1 : 0]		RDATA_reserved1   = 32'h0;
-wire[1:0]				RRESP_reserved1   = 2'h0;
 //reserved2
-wire 					AWVALID_reserved2;	
 wire 					AWREADY_reserved2 = 1'b1;	
+wire 					WREADY_reserved2  = 1'b1;
+wire  					BVALID_reserved2  = 1'b1;
+wire[1:0]				BRESP_reserved2   = 2'h0;
+wire  					ARREADY_reserved2 = 1'b1;
+wire					RVALID_reserved2  = 1'b1;
+wire[`AXI_DATA_WIDTH - 1 : 0]		RDATA_reserved2   = 32'h0;
+wire[1:0]				RRESP_reserved2   = 2'h0;
+wire 					AWVALID_reserved2;	
 wire [`AXI_ADDR_WIDTH - 1 : 0] 		AWADDR_reserved2;
 wire [2:0]				AWPROT_reserved2;
 wire 					WVALID_reserved2;
-wire 					WREADY_reserved2  = 1'b1;
 wire [`AXI_DATA_WIDTH - 1 : 0] 		WDATA_reserved2;
 wire [`AXI_STRB_WIDTH - 1 : 0]		WSTRB_reserved2;
-wire  					BVALID_reserved2  = 1'b1;
 wire 					BREADY_reserved2;
-wire[1:0]				BRESP_reserved2   = 2'h0;
 wire 					ARVALID_reserved2;			
-wire  					ARREADY_reserved2 = 1'b1;
 wire [`AXI_ADDR_WIDTH - 1 : 0]		ARADDR_reserved2;
 wire [2:0]				ARPROT_reserved2;
-wire					RVALID_reserved2  = 1'b0;
 wire					RREADY_reserved2;
-wire[`AXI_DATA_WIDTH - 1 : 0]		RDATA_reserved2   = 32'h0;
-wire[1:0]				RRESP_reserved2   = 2'h0;
 
 
 
@@ -938,28 +938,42 @@ uart u_uart (
 //-----------------------------------------------------//
 `ifdef KRV_HAS_PLIC
 kplic u_kplic (
+.ACLK			(ACLK			),						
+.ARESETn		(ARESETn		),						
+.AWVALID		(AWVALID_kplic		),	
+.AWREADY		(AWREADY_kplic		),	
+.AWADDR			(AWADDR_kplic		),
+.AWPROT			(AWPROT_kplic		),
+.WVALID			(WVALID_kplic		),
+.WREADY			(WREADY_kplic		),
+.WDATA			(WDATA_kplic		),
+.WSTRB			(WSTRB_kplic		),
+.BVALID			(BVALID_kplic		),
+.BREADY			(BREADY_kplic		),
+.BRESP			(BRESP_kplic		),
+.ARVALID		(ARVALID_kplic		),			
+.ARREADY		(ARREADY_kplic		),
+.ARADDR			(ARADDR_kplic		),
+.ARPROT			(ARPROT_kplic		),
+.RVALID			(RVALID_kplic		),
+.RREADY			(RREADY_kplic		),
+.RDATA			(RDATA_kplic		),
+.RRESP			(RRESP_kplic		),
+
 .kplic_clk		(kplic_clk),
 .kplic_rstn		(kplic_rstn),
 .external_int		(external_int),
-.kplic_int		(kplic_int),
-
-	.ACLK		(ACLK),
-	.ARESETn	(ARESETn),
-	.HSEL		(HSEL_kplic),
-	.HADDR		(HADDR_kplic),
-	.HWRITE		(HWRITE_kplic),
-	.HTRANS		(HTRANS_kplic),
-	.HBURST		(HBURST_kplic),
-	.HWDATA		(HWDATA_kplic),
-	.HREADY		(HREADY_kplic),
-	.HRESP		(HRESP_kplic),
-	.HRDATA		(HRDATA_kplic)
+.kplic_int		(kplic_int)
 );
 `else
-assign HREADY_kplic = 1'b1;
-assign HRDATA_kplic = 32'h0;
-assign HRESP_kplic = 2'h0;
-assign kplic_int = 1'b0;
+assign	AWREADY_kplic = 1'b1;	
+assign	WREADY_kplic  = 1'b1;
+assign	BVALID_kplic  = 1'b1;
+assign	BRESP_kplic   = 2'h0;
+assign	ARREADY_kplic = 1'b1;
+assign	RVALID_kplic  = 1'b1;
+assign	RDATA_kplic   = 32'h0;
+assign	RRESP_kplic   = 2'h0;
 `endif
 
 //-----------------------------------------------------//
@@ -967,24 +981,40 @@ assign kplic_int = 1'b0;
 //-----------------------------------------------------//
 `ifdef KRV_HAS_MTIMER
 core_timer u_core_timer (
-	.core_timer_int		(core_timer_int),
-	.ACLK		(ACLK),
-	.ARESETn	(ARESETn),
-	.HSEL		(HSEL_core_timer),
-	.HADDR		(HADDR_core_timer),
-	.HWRITE		(HWRITE_core_timer),
-	.HTRANS		(HTRANS_core_timer),
-	.HBURST		(HBURST_core_timer),
-	.HWDATA		(HWDATA_core_timer),
-	.HREADY		(HREADY_core_timer),
-	.HRESP		(HRESP_core_timer),
-	.HRDATA		(HRDATA_core_timer)
+.ACLK			(ACLK			),						
+.ARESETn		(ARESETn		),						
+.AWVALID		(AWVALID_ctimer		),	
+.AWREADY		(AWREADY_ctimer		),	
+.AWADDR			(AWADDR_ctimer		),
+.AWPROT			(AWPROT_ctimer		),
+.WVALID			(WVALID_ctimer		),
+.WREADY			(WREADY_ctimer		),
+.WDATA			(WDATA_ctimer		),
+.WSTRB			(WSTRB_ctimer		),
+.BVALID			(BVALID_ctimer		),
+.BREADY			(BREADY_ctimer		),
+.BRESP			(BRESP_ctimer		),
+.ARVALID		(ARVALID_ctimer		),			
+.ARREADY		(ARREADY_ctimer		),
+.ARADDR			(ARADDR_ctimer		),
+.ARPROT			(ARPROT_ctimer		),
+.RVALID			(RVALID_ctimer		),
+.RREADY			(RREADY_ctimer		),
+.RDATA			(RDATA_ctimer		),
+.RRESP			(RRESP_ctimer		),
+
+.core_timer_int		(core_timer_int)
 );
 `else
-assign HREADY_core_timer = 1'b1;
-assign HRDATA_core_timer = 32'h0;
-assign HRESP_core_timer = 2'h0;
-assign core_timer_int = 1'b0;
+assign	AWREADY_ctimer = 1'b1;	
+assign	WREADY_ctimer  = 1'b1;
+assign	BVALID_ctimer  = 1'b1;
+assign	BRESP_ctimer   = 2'h0;
+assign	ARREADY_ctimer = 1'b1;
+assign	RVALID_ctimer  = 1'b1;
+assign	RDATA_ctimer   = 32'h0;
+assign	RRESP_ctimer   = 2'h0;
+assign  core_timer_int = 1'b0;
 `endif
 
 `ifdef KRV_HAS_DBG
@@ -1020,19 +1050,26 @@ dtm u_dtm (
 dm u_dm(
 	.ACLK		(ACLK),
 	.ARESETn	(ARESETn),
-	.HBUSREQ	(sb_HBUSREQ),
-	.HGRANT		(sb_HGRANT),
-	.HREADY		(sb_HREADY),
-	.HRESP		(sb_HRESP),
-	.HRDATA		(sb_HRDATA),
-	.HLOCK		(sb_HLOCK),
-	.HTRANS		(sb_HTRANS),
-	.HADDR		(sb_HADDR),
-	.HWRITE		(sb_HWRITE),
-	.HSIZE		(sb_HSIZE),
-	.HBURST		(sb_HBURST),
-	.HPROT		(sb_HPROT),
-	.HWDATA		(sb_HWDATA),
+	.AWVALID	(sb_AWVALID		),
+	.AWREADY	(sb_AWREADY		),
+	.AWADDR		(sb_AWADDR		),
+	.AWPROT		(sb_AWPROT		),
+	.WVALID		(sb_WVALID		),
+	.WREADY		(sb_WREADY		),
+	.WDATA		(sb_WDATA		),
+	.WSTRB		(sb_WSTRB		),
+	.BVALID		(sb_BVALID		),
+	.BREADY		(sb_BREADY		),
+	.BRESP		(sb_BRESP		),
+	.ARVALID	(sb_ARVALID		),			
+	.ARREADY	(sb_ARREADY		),
+	.ARADDR		(sb_ARADDR		),
+	.ARPROT		(sb_ARPROT		),
+	.RVALID		(sb_RVALID		),
+	.RREADY		(sb_RREADY		),
+	.RDATA		(sb_RDATA		),
+	.RRESP		(sb_RRESP		),
+
 
 .sys_clk		(cpu_clk	),
 .sys_rstn		(cpu_rstn	),

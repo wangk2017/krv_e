@@ -20,6 +20,9 @@
 //                      First version				||
 //===============================================================
 
+`include "top_defines.vh"
+
+
 module uart_rx(
 );
 

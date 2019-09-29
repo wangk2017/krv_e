@@ -44,12 +44,12 @@ output [`AXI_DATA_WIDTH - 1 : 0]	RDATA,
 output [1:0]				RRESP
 );
 
-reg [`AHB_DATA_WIDTH - 1 : 0] mem [81919:0];
+reg [`AXI_DATA_WIDTH - 1 : 0] mem [81919:0];
 //AXI4-lite slave interface
-wire [`AHB_DATA_WIDTH - 1 : 0] 	ip_read_data;
+wire [`AXI_DATA_WIDTH - 1 : 0] 	ip_read_data;
 wire 				ip_read_data_valid;
-wire [`AHB_ADDR_WIDTH - 1 : 0] 	ip_addr;
-wire [`AHB_DATA_WIDTH - 1 : 0] 	ip_write_data;
+wire [`AXI_ADDR_WIDTH - 1 : 0] 	ip_addr;
+wire [`AXI_DATA_WIDTH - 1 : 0] 	ip_write_data;
 wire [3:0] 			ip_byte_strobe;
 wire 				valid_reg_write;
 wire 				valid_reg_read;

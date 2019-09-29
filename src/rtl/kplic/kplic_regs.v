@@ -22,18 +22,19 @@
 //                      First version				 ||
 //===============================================================||
 
-`include "kplic_defines.vh"
+`include "top_defines.vh"
+
 module kplic_regs (
 //global signals
 input wire kplic_clk,						//KPLIC clock
 input wire kplic_rstn,						//KPLIC reset, active low
 
-//interface with AHB2regbus
-input wire valid_reg_access,					//valid reg access
+input wire valid_reg_read,					//valid reg read
+input wire valid_reg_write,					//valid reg write
 input wire [11:0] addr,						//reg access address
-input wire rd_wr,						//reg access cmd, wr=1; rd=0
 input wire [`KPLIC_DATA_WIDTH - 1 : 0] write_data,		//reg write data
 output wire [`KPLIC_DATA_WIDTH - 1 : 0] read_data,		//reg read data
+output wire read_data_valid,					//reg read data valid
 
 //interface with kplic_gateway
 output reg [`KPLIC_DATA_WIDTH - 1 : 0] int_type,		//int type, edge_triggered=1, level_sensitive=0
@@ -92,10 +93,6 @@ assign int_priority_group7_sel = (addr == `KPLIC_INT_PRIORITY_GROUP7_OFFSET);
 //-------------------------------------------------------------------//
 //2: reg read / write
 //-------------------------------------------------------------------//
-wire valid_reg_read;
-wire valid_reg_write;
-assign valid_reg_read = valid_reg_access & !rd_wr;
-assign valid_reg_write = valid_reg_access & rd_wr;
 
 //individual int type : 0--level sensitive; 1--edge triggered
 always @ (posedge kplic_clk or negedge kplic_rstn)
@@ -419,6 +416,8 @@ assign read_data = {32{valid_reg_read}} &
 			int_priority_group5_read_data 	|
 			int_priority_group6_read_data 	|
 			int_priority_group7_read_data) ;
+
+assign read_data_valid = valid_reg_read;
 
 assign int_claim = valid_reg_read & mppi_sel;
 
