@@ -121,8 +121,8 @@ uart_regs u_uart_regs (
 
 //UART baud clock generator
 baud_clk_gen u_baud_clk_gen (
-.PCLK				(PCLK		),
-.PRESETN			(PRESETN	),
+.ACLK				(ACLK		),
+.ARESETn			(ARESETn	),
 .baud_val			(baud_val	),
 .tx_baud_pulse			(tx_baud_pulse	),
 .rx_sample_pulse		(rx_sample_pulse)
@@ -130,8 +130,8 @@ baud_clk_gen u_baud_clk_gen (
 
 //UART transmit control block
 uart_tx u_uart_tx (
-.PCLK				(PCLK		),
-.PRESETN			(PRESETN	),
+.ACLK				(ACLK		),
+.ARESETn			(ARESETn	),
 .tx_baud_pulse			(tx_baud_pulse	),
 .tx_data_reg_wr			(tx_data_reg_wr		),
 .tx_data			(tx_data		),

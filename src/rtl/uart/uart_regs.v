@@ -66,6 +66,7 @@ output [12:0] 	baud_val,
 output  	data_bits,
 output 		parity_en,
 output 		parity_odd0_even1,
+output		rx_data_reg_rd,
 input  [7:0] 	rx_data,
 input 		rx_ready,
 input 		tx_ready,
@@ -145,8 +146,8 @@ assign tx_data_reg_wr = valid_reg_write && tx_data_reg_sel;
 wire [7:0] tx_data_read_data = 8'h0;
 
 //rx_data reg is maintained in uart_rx block
-wire rx_data_reg_sel = ip_addr[4:2] == `RX_DATA_REG_OFFSET;
-wire [7:0] rx_data_read_data = rx_data_reg_sel ? rx_data : 8'h0;
+assign rx_data_reg_rd = ip_addr[4:2] == `RX_DATA_REG_OFFSET;
+wire [7:0] rx_data_read_data = rx_data_reg_rd ? rx_data : 8'h0;
 
 //config1_reg
 wire config1_reg_sel = ip_addr[4:2] == `CONFIG1_REG_OFFSET;

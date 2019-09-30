@@ -24,8 +24,8 @@
 
 
 module baud_clk_gen (
-input        	PCLK,
-input        	PRESETN,
+input        	ACLK,
+input        	ARESETn,
 input [12:0] 	baud_val,
 output 		tx_baud_pulse,
 output 		rx_sample_pulse
@@ -33,9 +33,9 @@ output 		rx_sample_pulse
 
 reg [12:0] baud_cnt;
 
-always @ (posedge PCLK or negedge PRESETN)
+always @ (posedge ACLK or negedge ARESETn)
 begin
-	if(!PRESETN)
+	if(!ARESETn)
 	begin
 		baud_cnt <= 13'h0;
 	end
@@ -56,9 +56,9 @@ assign rx_sample_pulse = (baud_cnt == baud_val);
 
 reg[3:0] tx_cnt;
 wire tx_pulse_en = tx_cnt == 4'hf;
-always @ (posedge PCLK or negedge PRESETN)
+always @ (posedge ACLK or negedge ARESETn)
 begin
-	if(!PRESETN)
+	if(!ARESETn)
 	begin
 		tx_cnt <= 4'h0;
 	end
