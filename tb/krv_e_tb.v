@@ -29,6 +29,36 @@ wire [31:0] dec_pc = DUT.u_core.u_fetch.pc_dec;
 wire uart_tx_wr = DUT.u_uart.tx_data_reg_wr;
 wire[7:0] uart_tx_data = DUT.u_uart.tx_data;
 
+//add a UART RX for self TX/RX test
+wire rx_sample_pulse = DUT.u_uart.rx_sample_pulse;
+wire data_bits = DUT.u_uart.data_bits;
+wire parity_en = DUT.u_uart.parity_en;
+wire parity_odd0_even1 = DUT.u_uart.parity_odd0_even1;
+wire [7:0] rx_data;
+wire rx_data_read_valid;
+wire rx_data_reg_rd = rx_ready;
+wire rx_ready;
+wire parity_err;
+wire overflow;
+
+
+uart_rx uart_test (
+.ACLK			(clk_in),
+.ARESETn		(porn),
+.UART_RX		(UART_TX),
+.rx_sample_pulse	(rx_sample_pulse	),
+.data_bits		(data_bits		),
+.parity_en		(parity_en		),
+.parity_odd0_even1	(parity_odd0_even1	),
+.rx_data_reg_rd		(rx_data_reg_rd		),
+.rx_data		(rx_data		),
+.rx_data_read_valid	(rx_data_read_valid	),
+.rx_ready		(rx_ready		),
+.parity_err		(parity_err		),
+.overflow		(overflow		)
+);
+
+
 
 `ifdef PG_TEST
 `include "pg_sr.v"

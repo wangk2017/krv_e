@@ -16,7 +16,8 @@ end
 wire test_end1;
 assign test_end1 = dec_pc == 32'h00000d00;
 
-integer fp_z;
+integer fp_tx;
+integer fp_rx;
 
 initial
 begin
@@ -24,16 +25,26 @@ begin
 	$display ("running Zephyr OS application hello world\n");
 	$display ("=============================================\n");
 
-	fp_z =$fopen ("./out/uart_tx_data.txt","w");
+	fp_tx =$fopen ("./out/uart_tx_data.txt","w");
+	fp_rx =$fopen ("./out/uart_rx_data.txt","w");
 @(posedge test_end1)
 @(posedge DUT.cpu_clk);
 begin
-	$fclose(fp_z);
+	$fclose(fp_tx);
+	$fclose(fp_rx);
 	$display ("=============================================\n");
 	$display ("TEST_END\n");
 	$display ("The application Print data is stored in \n");
 	$display ("out/uart_tx_data.txt\n");
 	$display ("=============================================\n");
+	repeat (8000)	//wait for UART done
+	begin
+	@(posedge DUT.cpu_clk);
+	end	
+	$display ("================================================================\n");
+	$display ("The application Print data is received by UART RX and stored in \n");
+	$display ("out/uart_rx_data.txt\n");
+	$display ("================================================================\n");
 	$stop;
 end
 end
@@ -41,13 +52,24 @@ end
 always @(posedge DUT.cpu_clk)
 begin
 	if(uart_tx_wr)
-		begin
-			$fwrite(fp_z, "%s", uart_tx_data);
-			$display ("UART Transmitt DATA is %s ",uart_tx_data);
-			$display ("\n");
-		end
+	begin
+		$fwrite(fp_tx, "%s", uart_tx_data);
+		$display ("UART Transmitt DATA is %s ",uart_tx_data);
+		$display ("\n");
+	end
 
 end
+
+always @(posedge DUT.cpu_clk)
+begin
+	if(rx_data_read_valid)
+	begin
+		$fwrite(fp_rx, "%s", rx_data);
+	end
+
+end
+
+
 parameter MAIN 			= 32'h000003c8;
 parameter SWAP			= 32'h00000228;
 parameter BG_THREAD_MAIN	= 32'h000013a8;

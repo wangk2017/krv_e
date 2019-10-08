@@ -38,7 +38,7 @@ output		tx_ready
 
 parameter UART_DATA_WIDTH = 8;
 parameter UART_TX_FIFO_DEPTH = 8;
-parameter UART_TX_FIFO_PTR_WIDTH = 4;
+parameter UART_TX_FIFO_PTR_WIDTH = $clog2(UART_TX_FIFO_DEPTH);
 
 wire uart_tx_buf_rd_ready;
 wire uart_tx_buf_rd_valid;
@@ -64,15 +64,16 @@ sync_fifo #(.DATA_WIDTH (UART_DATA_WIDTH), .FIFO_DEPTH(UART_TX_FIFO_DEPTH),.PTR_
 
 
 //tx fsm
-parameter UART_TX_IDLE 		= 2'b00;
-parameter UART_TX_START 	= 2'b01;
-parameter UART_TX_DATA 		= 2'b10;
-parameter UART_TX_PARITY 	= 2'b11;
+parameter UART_TX_IDLE 		= 3'b000;
+parameter UART_TX_START 	= 3'b001;
+parameter UART_TX_DATA 		= 3'b010;
+parameter UART_TX_PARITY 	= 3'b011;
+parameter UART_TX_STOP 		= 3'b100;
 
 reg [2:0] tx_data_bit_cnt;
 wire data_tx_done = (tx_data_bit_cnt == 3'h6 + data_bits);
 
-reg [1:0] uart_tx_state, uart_tx_next_state;
+reg [2:0] uart_tx_state, uart_tx_next_state;
 
 assign uart_tx_buf_rd_ready = (uart_tx_state == UART_TX_IDLE) && !uart_tx_buf_empty && tx_baud_pulse;
 
@@ -112,12 +113,15 @@ begin
 				if(parity_en)
 					uart_tx_next_state = UART_TX_PARITY;
 				else
-					uart_tx_next_state = UART_TX_IDLE;
+					uart_tx_next_state = UART_TX_STOP;
 			end
 			else
 				uart_tx_next_state = UART_TX_DATA;
 		end
 		UART_TX_PARITY: begin
+				uart_tx_next_state = UART_TX_STOP;
+		end
+		UART_TX_STOP: begin
 				uart_tx_next_state = UART_TX_IDLE;
 		end
 		default: begin
@@ -181,6 +185,9 @@ begin
 			UART_TX <= ^(uart_tx_buf_rd_data);
 			else 
 			UART_TX <= ~^(uart_tx_buf_rd_data);
+		end
+		UART_TX_STOP: begin
+			UART_TX <= 1'b1;
 		end
 		default: begin
 			UART_TX <= 1'b1;

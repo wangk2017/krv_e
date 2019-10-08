@@ -33,6 +33,7 @@ input 		parity_en,
 input 		parity_odd0_even1,
 input		rx_data_reg_rd,
 output [7:0]    rx_data,
+output  	rx_data_read_valid,
 output 		rx_ready,
 output		parity_err,
 output		overflow
@@ -41,7 +42,7 @@ output		overflow
 
 parameter UART_DATA_WIDTH = 8;
 parameter UART_RX_FIFO_DEPTH = 8;
-parameter UART_RX_FIFO_PTR_WIDTH = 4;
+parameter UART_RX_FIFO_PTR_WIDTH = $clog2(UART_RX_FIFO_DEPTH);
 
 //RX sample
 reg rx_d0;
@@ -63,16 +64,17 @@ end
 
 
 //UART receive FSM
-localparam UART_RX_IDLE  	= 2'b00;
-localparam UART_RX_START 	= 2'b01;
-localparam UART_RX_DATA  	= 2'b10;
-localparam UART_RX_PARITY  	= 2'b11;
+localparam UART_RX_IDLE  	= 3'b000;
+localparam UART_RX_START 	= 3'b001;
+localparam UART_RX_DATA  	= 3'b010;
+localparam UART_RX_PARITY  	= 3'b011;
+localparam UART_RX_STOP  	= 3'b100;
 
-reg[1:0] uart_rx_state, uart_rx_next_state;
+reg[2:0] uart_rx_state, uart_rx_next_state;
 
-wire uart_rx_idle = (uart_rx_state == UART_RX_IDLE);
-wire uart_rx_data = (uart_rx_state == UART_RX_DATA);
-wire uart_rx_parity = (uart_rx_state == UART_RX_PARITY);
+wire uart_rx_idle_stage = (uart_rx_state == UART_RX_IDLE);
+wire uart_rx_data_stage = (uart_rx_state == UART_RX_DATA);
+wire uart_rx_parity_stage = (uart_rx_state == UART_RX_PARITY);
 
 reg[3:0] sample_cnt;
 always @ (posedge ACLK or negedge ARESETn)
@@ -83,7 +85,7 @@ begin
 	end
 	else
 	begin
-		if((uart_rx_idle && !rx_d1) || !uart_rx_idle)
+		if((uart_rx_idle_stage && !rx_d1) || !uart_rx_idle_stage)
 		begin
 			if(rx_sample_pulse)
 			begin
@@ -100,11 +102,31 @@ begin
 	end
 end
 
-wire rx_sample_point = (sample_cnt == 3'h7);
-wire rx_baud_pulse = (sample_cnt == 4'hf);
+wire rx_sample_point = (sample_cnt == 3'h7) && rx_sample_pulse;
+wire rx_baud_pulse = (sample_cnt == 4'hf) && rx_sample_pulse;
 
 reg [2:0] rx_data_bit_cnt;
-wire data_rx_done = (rx_data_bit_cnt == 3'h6 + data_bits);
+reg last_sample;
+always @ (posedge ACLK or negedge ARESETn)
+begin
+	if(!ARESETn)
+	begin
+		last_sample <= 1'b0;
+	end
+	else
+	begin
+		if(!uart_rx_data_stage)
+		begin
+			last_sample <= 1'b0;
+		end
+		else if((rx_data_bit_cnt == 3'h6 + data_bits) && rx_sample_point)
+		begin
+			last_sample <= 1'b1;
+		end
+	end
+end
+
+wire data_rx_done = last_sample && rx_baud_pulse;
 
 //rx_data_bit_cnt
 always @ (posedge ACLK or negedge ARESETn)
@@ -115,20 +137,10 @@ begin
 	end
 	else
 	begin
-		if(uart_rx_state == UART_RX_DATA)
-		begin
-			if(rx_sample_point)
-			begin
-				if(data_rx_done)
-				rx_data_bit_cnt <= 3'h0;
-				else
-				rx_data_bit_cnt <= rx_data_bit_cnt + 3'h1;
-			end
-		end
-		else
-		begin
-			rx_data_bit_cnt <= 3'h0;
-		end
+		if(data_rx_done || !uart_rx_data_stage)
+		rx_data_bit_cnt <= 3'h0;
+		else if(uart_rx_data_stage && rx_sample_point)
+		rx_data_bit_cnt <= rx_data_bit_cnt + 3'h1;
 	end
 end
 
@@ -142,7 +154,6 @@ begin
 	end
 	else
 	begin
-		if(rx_baud_pulse)
 		uart_rx_state <= uart_rx_next_state;
 	end
 end
@@ -151,33 +162,41 @@ always @*
 begin
 		case(uart_rx_state)
 		UART_RX_IDLE: begin
-			if(rx_sample_point && !rx_d1)
+			if(!rx_d1)
 			uart_rx_next_state = UART_RX_START;
 			else
 			uart_rx_next_state = UART_RX_IDLE;
 		end
 		UART_RX_START: begin
-			if(rx_sample_point)
-			begin
-				if(!rx_d1)
-				uart_rx_next_state = UART_RX_DATA;
-				else
-				uart_rx_next_state = UART_RX_IDLE;
-			end
+			if(rx_sample_point && rx_d1)
+			uart_rx_next_state = UART_RX_IDLE;
+			else if(rx_baud_pulse)
+			uart_rx_next_state = UART_RX_DATA;
 			else
 			uart_rx_next_state = UART_RX_START;
 		end
 		UART_RX_DATA: begin
 			if(data_rx_done)
-			uart_rx_next_state = UART_RX_PARITY;
+			begin
+				if(parity_en)
+				uart_rx_next_state = UART_RX_PARITY;
+				else
+				uart_rx_next_state = UART_RX_STOP;	
+			end
 			else
 			uart_rx_next_state = UART_RX_DATA;
 		end
 		UART_RX_PARITY: begin
-			if(rx_sample_point)
-			uart_rx_next_state = UART_RX_IDLE;	
+			if(rx_baud_pulse)
+			uart_rx_next_state = UART_RX_STOP;	
 			else
 			uart_rx_next_state = UART_RX_PARITY;
+		end
+		UART_RX_STOP: begin
+			if(rx_baud_pulse)
+			uart_rx_next_state = UART_RX_IDLE;	
+			else
+			uart_rx_next_state = UART_RX_STOP;	
 		end
 		default: begin
 			uart_rx_next_state = UART_RX_IDLE;	
@@ -194,10 +213,14 @@ begin
 	begin
 		shift_rx_data <= 8'h0;
 	end
-	else if(uart_rx_data)
+	else if(uart_rx_data_stage)
 	begin
 		if(rx_sample_point)
-		shift_rx_data <= {shift_rx_data[6:0],rx_d1};
+		shift_rx_data <= {rx_d1,shift_rx_data[7:1]};
+	end
+	else
+	begin
+		shift_rx_data <= 8'h0;
 	end
 end	
 
@@ -208,7 +231,7 @@ begin
 	begin
 		parity_bit <= 1'b0;
 	end
-	else if(uart_rx_parity)
+	else if(uart_rx_parity_stage)
 	begin
 		if(rx_sample_point)
 		parity_bit <= rx_d1;
@@ -241,6 +264,7 @@ sync_fifo #(.DATA_WIDTH (UART_DATA_WIDTH), .FIFO_DEPTH(UART_RX_FIFO_DEPTH),.PTR_
 );
 
 assign rx_data = uart_rx_buf_rd_valid ? uart_rx_buf_rd_data : 8'h0;
+assign rx_data_read_valid = uart_rx_buf_rd_valid;
 assign rx_ready = !uart_rx_buf_empty;
 assign overflow = data_rx_done && uart_rx_buf_full;
 

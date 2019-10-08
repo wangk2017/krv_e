@@ -68,6 +68,7 @@ output 		parity_en,
 output 		parity_odd0_even1,
 output		rx_data_reg_rd,
 input  [7:0] 	rx_data,
+input   	rx_data_read_valid,
 input 		rx_ready,
 input 		tx_ready,
 input 		parity_err,
@@ -147,7 +148,6 @@ wire [7:0] tx_data_read_data = 8'h0;
 
 //rx_data reg is maintained in uart_rx block
 assign rx_data_reg_rd = ip_addr[4:2] == `RX_DATA_REG_OFFSET;
-wire [7:0] rx_data_read_data = rx_data_reg_rd ? rx_data : 8'h0;
 
 //config1_reg
 wire config1_reg_sel = ip_addr[4:2] == `CONFIG1_REG_OFFSET;
@@ -203,13 +203,12 @@ wire status_reg_sel = ip_addr[4:2] == `STATUS_REG_OFFSET;
 wire [7:0] status_read_data = status_reg_sel ? status_reg : 8'h0;
 
 
-wire [7:0] Nxtip_read_data = {8{valid_reg_read}} & 
+wire [7:0] Nxtip_read_data = ({8{valid_reg_read}} & 
 			(tx_data_read_data 	|
-			 rx_data_read_data	|
 			 config1_read_data	|
 			 config2_read_data	|
 			 status_read_data	
-			);
+			));
 reg [7:0] iip_read_data;
 reg iip_read_data_valid;
 
@@ -227,8 +226,8 @@ begin
 	end
 end
 
-assign ip_read_data = iip_read_data;
-assign ip_read_data_valid = iip_read_data_valid;
+assign ip_read_data = rx_data_read_valid ? rx_data : iip_read_data;
+assign ip_read_data_valid = iip_read_data_valid | rx_data_read_valid;
 
 endmodule
 
