@@ -31,16 +31,16 @@ begin
 @(posedge DUT.cpu_clk);
 begin
 	$fclose(fp_tx);
-	$fclose(fp_rx);
 	$display ("=============================================\n");
 	$display ("TEST_END\n");
 	$display ("The application Print data is stored in \n");
 	$display ("out/uart_tx_data.txt\n");
 	$display ("=============================================\n");
-	repeat (8000)	//wait for UART done
+	repeat (6000)	//wait for UART done
 	begin
 	@(posedge DUT.cpu_clk);
 	end	
+	$fclose(fp_rx);
 	$display ("================================================================\n");
 	$display ("The application Print data is received by UART RX and stored in \n");
 	$display ("out/uart_rx_data.txt\n");
