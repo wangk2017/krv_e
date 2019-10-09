@@ -144,6 +144,15 @@ ebreak.sim: hex_file/dbg/ebreak.hex
 	vvp -l out/$@ -v -n ./out/krv -lxt2
 	cp out/krv.vcd out/krv.lxt
 
+dhrystone.sim: hex_file/dhrystone.hex
+	cp $< hex_file/run.hex
+	./tb/sim_define.sh DHRYSTONE
+	iverilog -g2009 -I ./tb -I ./tb/case_ctrl_dbg -I ./src/rtl/inc -o ./out/krv ./tb/krv_e_tb.v ./tb/rom.v ./src/rtl/*/*.v
+	vvp -l out/$@ -v -n ./out/krv -lxt2
+	cp out/krv.vcd out/krv.lxt
+	
+
+
 check_fail:
 	grep "Fail" out/*.sim
 
