@@ -20,7 +20,7 @@ assign test_end1 = (uart_tx_data==8'hff);
 
 //performance
 wire [31:0] valid_branch_num = DUT.u_core.u_dec.branch_cnt;
-wire [31:0] taken_branch_num = DUT.u_core.u_dec.branch_taken_cnt;
+wire [31:0] mis_predict_num = DUT.u_core.u_dec.mis_predict_cnt;
 wire [31:0] div_stall = DUT.u_core.u_alu.ex_stall_cnt;
 
 integer fp_z;
@@ -38,11 +38,11 @@ begin
 @(posedge test_end1)
 begin
 	$display ("Dhrystone performance analysis is stored in out/dhrystone_perf.txt \n");
-	$fwrite(fp_p, "Valid Branch Instructions number is %d", valid_branch_num);
+	$fwrite(fp_p, "Total Valid Branch number is %d", valid_branch_num);
 	$fwrite(fp_p, "                                         \n");
-	$fwrite(fp_p, "Taken Branch Instructions number is %d", taken_branch_num);
+	$fwrite(fp_p, "Mis predict branch number is %d", mis_predict_num);
 	$fwrite(fp_p, "                                         \n");
-	$fwrite(fp_p, "The Miss prediction ratio is %f", taken_branch_num/valid_branch_num);
+	$fwrite(fp_p, "The Miss prediction ratio is %f", mis_predict_num/valid_branch_num);
 	$fwrite(fp_p, "                                         \n");
 	$fwrite(fp_p, "=========================================\n");
 	$fwrite(fp_p, "Stall cycle number is %d due to div", div_stall);

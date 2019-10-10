@@ -34,8 +34,10 @@ input wire cpu_rstn,						// cpu reset, active low
 //interface with fetch
 input wire if_valid,						// indication of IF stage data valid
 output wire dec_ready,						// indication of DEC stage is ready
+input wire predict_taken_dec,					// predict_taken at DEC stage
 input wire [`INSTR_WIDTH - 1 : 0] instr_dec,			// instruction at dec stage
 input wire [`ADDR_WIDTH - 1 : 0] pc_dec,			// pc propagated from IF stage
+input wire [`ADDR_WIDTH - 1 : 0] pc_plus4_dec,			// pc plus4 propagated from IF stage
 output wire fence_dec,						// fence
 output reg jalr_ex,						// jalr
 output wire jal_dec,						// jal
@@ -74,7 +76,7 @@ output reg blt_ex,  						// blt at EX stage
 output reg bge_ex,  						// bge at EX stage
 output reg bltu_ex, 						// bltu at EX stage
 output reg bgeu_ex, 						// bgeu at EX stage
-input wire branch_taken_ex,					// branch condition met at EX stage
+input wire mis_predict,					// branch condition met at EX stage
 output reg load_ex, 						// propagate load to EX stage                   
 output reg store_ex, 						// propagate store to EX stage     
 output reg [`DATA_WIDTH - 1 : 0] store_data_ex,			// propagate store data to EX stage
@@ -82,7 +84,9 @@ output reg mem_H_ex,						// propagate halfword acess to EX stage
 output reg mem_B_ex,						// propagate byte accessto EX stage
 output reg mem_U_ex,						// propagate unsigned load to EX stage
 output reg [`RD_WIDTH:0] rd_ex, 				// propagate rd to EX stage
+output reg predict_taken_ex,
 output reg [`ADDR_WIDTH - 1 : 0] pc_ex,				// propagate pc to EX stage
+output reg [`ADDR_WIDTH - 1 : 0] pc_plus4_ex,			// propagate pc to EX stage
 output reg [`DATA_WIDTH - 1 : 0] instr_ex,			// propagate pc to EX stage
 
 //interface with dmem_ctrl
@@ -507,7 +511,7 @@ end
 //---------------------------------------------------------------------------//
 wire dec_bubble = !if_valid || dec_stall;
 //dec flush condition
-wire flush_dec = branch_taken_ex || jalr_ex || exception_met
+wire flush_dec = mis_predict || jalr_ex || exception_met
 `ifdef KRV_HAS_DBG
 || breakpoint
 `endif
@@ -716,7 +720,9 @@ begin
 		mem_H_ex <= 1'b0;
 		mem_B_ex <= 1'b0;
 		mem_U_ex <= 1'b0;
+		predict_taken_ex <= 1'b0;
 		pc_ex <= 0;
+		pc_plus4_ex <= 0;
 		instr_ex <= 0;
 		imm_ex <= {`DATA_WIDTH{1'b0}};
 		pre_instr_is_load <= 1'b0;
@@ -728,6 +734,7 @@ begin
 			store_ex <= 1'b0;
 			load_ex <= 1'b0;
 			pre_instr_is_load <= 1'b0;
+			predict_taken_ex <= 1'b0;
 			mem_H_ex <= 1'b0;
 			mem_B_ex <= 1'b0;
 			mem_U_ex <= 1'b0;
@@ -743,6 +750,7 @@ begin
 				mem_B_ex <= 1'b0;
 				mem_U_ex <= 1'b0;
 				pc_ex <= pc_ex;
+				pc_plus4_ex <= pc_plus4_ex;
 				instr_ex <= instr_ex;
 			end
 			else
@@ -753,7 +761,9 @@ begin
 				mem_H_ex <= (instruction_is_load || instruction_is_store) && (funct3_001 || funct3_101); 
 				mem_B_ex <= (instruction_is_load || instruction_is_store) && (funct3_000 || funct3_100); 
 				mem_U_ex <= (instruction_is_load || instruction_is_store) && (funct3_101 || funct3_100); 
+				predict_taken_ex <= predict_taken_dec;
 				pc_ex <= pc_dec;
+				pc_plus4_ex <= pc_plus4_dec;
 				instr_ex <= instr_dec;
 				imm_ex <= imm_dec;
 			end
@@ -799,7 +809,7 @@ if(!cpu_rstn)
 	end
 	else 
 	begin
-		if(exception_met || branch_taken_ex)
+		if(exception_met || mis_predict)
 		begin
 			jalr_ex <= 1'b0;
 		end
@@ -822,7 +832,7 @@ end
 //---------------------------------------------------------------------------//
 
 //return instruction for trap
-assign mret = (instruction_is_system && funct12_mret && funct3_000) && !branch_taken_ex;
+assign mret = (instruction_is_system && funct12_mret && funct3_000) && !mis_predict;
 
 //return from debug
 `ifdef KRV_HAS_DBG
@@ -851,7 +861,7 @@ reg wfi_stall_delay;
 
 //wfi act as NOP in debug mode
 wire wfi_i;
-assign wfi_i =  ((instruction_is_system && funct12_wfi && funct3_000) && !branch_taken_ex)
+assign wfi_i =  ((instruction_is_system && funct12_wfi && funct3_000) && !mis_predict)
 `ifdef KRV_HAS_DBG
 && !dbg_mode
 `endif
@@ -1006,7 +1016,7 @@ wire wfi_stall;
 assign wfi_stall = wfi_i && !valid_interrupt;
 
 wire fence_stall;
-assign fence_dec = (instruction_is_fence && (funct3_000 || funct3_001)) && !fence_stall && !fence_d2 && !fence_d3;
+assign fence_dec = (instruction_is_fence && (funct3_000 || funct3_001)) && !fence_stall && !fence_d2 && !fence_d3 && !flush_dec;
 reg fence_d1;
 reg fence_d2;
 reg fence_d3;
@@ -1058,8 +1068,8 @@ wire [31:0] branch_cnt;
 wire branch = instruction_is_branch && (!flush_dec);
 en_cnt u_branch_cnt (.clk(cpu_clk), .rstn(cpu_rstn), .en(branch), .cnt (branch_cnt));
 
-wire [31:0] branch_taken_cnt;
-en_cnt u_branch_taken_cnt (.clk(cpu_clk), .rstn(cpu_rstn), .en(branch_taken_ex), .cnt (branch_taken_cnt));
+wire [31:0] mis_predict_cnt;
+en_cnt u_mis_predict_cnt (.clk(cpu_clk), .rstn(cpu_rstn), .en(mis_predict), .cnt (mis_predict_cnt));
 
 endmodule
 

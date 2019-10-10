@@ -53,9 +53,6 @@ input wire mcsr_set,					//mcsr set
 input wire mcsr_clr,					//mcsr clear
 input wire [`DATA_WIDTH - 1 : 0] write_data,		//mcsr write data
 
-//interface with alu
-input wire branch_taken_ex,				//branch taken
-
 //interface with mcsr
 input wire csr_illegal_access,				//illegal access
 input wire [`INSTR_WIDTH - 1 : 0] illegal_instr,	//illegal instr

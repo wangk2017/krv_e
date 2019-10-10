@@ -31,6 +31,7 @@ module branch_predict (
 	input [`ADDR_WIDTH - 1 : 0] pc,
 	output predict_taken,
 	output [`ADDR_WIDTH - 1 : 0] predict_target_pc,
+	input [`ADDR_WIDTH - 1 : 0] branch_target_pc,
 //interface with alu
 	input branch_ex,
 	input [`ADDR_WIDTH - 1 : 0] branch_pc_ex,
@@ -60,7 +61,7 @@ reg[`ADDR_WIDTH - 1 : 0] bht_r_pc;
 
 always @ (posedge cpu_clk)
 begin
-	bht_r_pc <= bht[hbt_raddr];
+	bht_r_pc <= bht[bht_raddr];
 	if(bht_wen)
 	begin
 		bht[bht_waddr] <= bht_w_pc;
@@ -125,7 +126,7 @@ end
 
 //predictor selector
 wire predictor;
-assign predictor = predict1[1];
+assign predictor = predict1_rd_data[1];
 
 assign predict_taken = hit && predictor;
 
@@ -153,7 +154,7 @@ reg[`ADDR_WIDTH - 1 : 0] btt_r_pc;
 
 always @ (posedge cpu_clk)
 begin
-	btt_r_pc <= btt[hbt_raddr];
+	btt_r_pc <= btt[btt_raddr];
 	if(btt_wen)
 	begin
 		btt[btt_waddr] <= btt_w_pc;

@@ -105,7 +105,10 @@ assign dbg_read_data_valid = dbg_gprs_read_data_valid | dbg_csrs_read_data_valid
 wire 					jal_dec;
 wire 					jalr_ex;
 wire 					fence_dec;
+wire 					predict_taken_dec;
+wire 					predict_taken_ex;
 wire [`ADDR_WIDTH - 1 : 0] 		pc_dec;
+wire [`ADDR_WIDTH - 1 : 0] 		pc_plus4_dec;
 
 wire [`RD_WIDTH:0] 			rd_ex;
 wire signed [`DATA_WIDTH - 1 : 0]  	src_data1_ex;	
@@ -137,6 +140,7 @@ wire 					bge_ex;
 wire 					bltu_ex;
 wire 					bgeu_ex;
 wire 					branch_taken_ex;
+wire 					branch_ex;
 wire [`DATA_WIDTH - 1 : 0]		alu_result_ex;				
 wire 					load_ex;
 wire 					store_ex;
@@ -146,6 +150,7 @@ wire 					mem_U_ex;
 wire [`DATA_WIDTH - 1 : 0] 		store_data_ex;
 wire 					only_src2_used_ex;	
 wire [`ADDR_WIDTH - 1 : 0] 		pc_ex;
+wire [`ADDR_WIDTH - 1 : 0] 		pc_plus4_ex;
 wire [`ADDR_WIDTH - 1 : 0]		mem_addr_ex;
 
 wire [`DATA_WIDTH - 1 : 0]		data_mem;				
@@ -191,6 +196,7 @@ wire 					load_data_valid_wb;
  wire 					dtcm_en;
  wire [`ADDR_WIDTH - 1 : 0] 		dtcm_start_addr;
 
+wire 					mis_predict;
 wire [`ADDR_WIDTH - 1 : 0] 		pc;
 wire 					pc_misaligned;
 wire 					load_x0;
@@ -296,15 +302,21 @@ fetch u_fetch(
 .pc			(pc),	
 .instr_read_data	(instr_read_data),
 .instr_read_data_valid	(instr_read_data_valid),	
+.predict_taken_dec	(predict_taken_dec),
 .pc_dec			(pc_dec),
+.pc_plus4_dec		(pc_plus4_dec),
 .if_valid		(if_valid ),		
 .dec_ready		(dec_ready),		
 .instr_dec		(instr_dec ),	
 .jal_dec		(jal_dec), 
 .jalr_ex		(jalr_ex), 
 .fence_dec		(fence_dec),
+.mis_predict		(mis_predict),
 .pc_ex			(pc_ex),
+.pc_plus4_ex		(pc_plus4_ex),
+.predict_taken_ex	(predict_taken_ex),
 .branch_taken_ex	(branch_taken_ex),
+.branch_ex		(branch_ex),
 .src_data1_ex		(src_data1_ex ),
 .imm_ex			(imm_ex),
 .imm_dec		(imm_dec),
@@ -336,7 +348,9 @@ dec u_dec (
 .if_valid		(if_valid ),		
 .dec_ready		(dec_ready),		
 .instr_dec		(instr_dec ),
+.predict_taken_dec	(predict_taken_dec),
 .pc_dec			(pc_dec),
+.pc_plus4_dec		(pc_plus4_dec),
 .jal_dec		(jal_dec), 
 .jalr_ex		(jalr_ex), 
 .fence_dec		(fence_dec),
@@ -370,14 +384,16 @@ dec u_dec (
 .bge_ex			(bge_ex),
 .bltu_ex		(bltu_ex),
 .bgeu_ex		(bgeu_ex),
-.branch_taken_ex	(branch_taken_ex),
+.mis_predict		(mis_predict),
 .load_ex		(load_ex),
 .store_ex		(store_ex),
 .mem_H_ex		(mem_H_ex),
 .mem_B_ex		(mem_B_ex),
 .mem_U_ex		(mem_U_ex),
 .store_data_ex		(store_data_ex),
+.predict_taken_ex	(predict_taken_ex),
 .pc_ex			(pc_ex),
+.pc_plus4_ex		(pc_plus4_ex),
 .rd_ex			(rd_ex ), 
 .imm_ex			(imm_ex),
 .imm_dec		(imm_dec),
@@ -463,6 +479,7 @@ alu u_alu (
 .bge_ex			(bge_ex),
 .bltu_ex		(bltu_ex),
 .bgeu_ex		(bgeu_ex),
+.branch_ex		(branch_ex),
 .branch_taken_ex	(branch_taken_ex),
 .rd_ex			(rd_ex ),			
 .load_ex		(load_ex),
@@ -622,7 +639,6 @@ mcsr u_mcsr(
 trap_ctrl u_trap_ctrl (
 .cpu_clk		(cpu_clk),		
 .cpu_rstn		(comb_rstn),	
-.branch_taken_ex	(branch_taken_ex),
 .pc_misaligned 		(pc_misaligned),
 .pc			(pc),	
 .fault_pc		(fault_pc),
