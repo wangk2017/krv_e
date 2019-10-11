@@ -23,9 +23,9 @@ CFLAGS += -fno-inline -fno-common
 CFLAGS += -DTIME -DCORE_HZ=27000000ll
 
 
-SRCS = 	src/helloworld.c src/stdlib.c src/start.S
+SRCS = 	src/helloworld.c ../common/stdlib.c ../common/start.S
 LDFLAGS += -lc
-LDSCRIPT = mapping.ld
+LDSCRIPT = ../common/mapping.ld
 
 CFLAGS += -I${ZEPHYR_SDK_INSTALL_DIR}/sysroots/riscv32-zephyr-elf/usr/include
 LDFLAGS += -L${ZEPHYR_SDK_INSTALL_DIR}/sysroots/riscv32-zephyr-elf/usr/lib/riscv32-zephyr-elf/6.1.0
@@ -95,6 +95,7 @@ clean:
 	rm -f $(OBJDIR)/software.v
 	rm -f $(OBJDIR)/software.bin
 	rm -f $(OBJDIR)/software.asm
+	rm -rf ./common
 	rm -rf $(OBJDIR)
 
 .SECONDARY: $(OBJS)
