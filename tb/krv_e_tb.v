@@ -68,6 +68,10 @@ uart_rx uart_test (
 `include "dhrystone_debug.v"
 `endif
 
+`ifdef COREMARK
+`include "coremark_debug.v"
+`endif
+
 `ifdef ZEPHYR
 `include "zephyr_debug.v"
 `endif
@@ -111,10 +115,10 @@ assign test_end = (dec_pc == 32'h48);
 assign test_end = 0; 
 `endif
 
+reg time_out;
 
 initial 
 begin
-
 	clk_in <= 0;
 	porn <= 0;
 	$readmemh("./hex_file/run.hex",DUT.u_flash_ss.mem);
@@ -159,6 +163,7 @@ end
 
 initial
 begin
+	time_out <= 1'b0;
 `ifndef RISCV
 	repeat (1000000)
 `else
@@ -167,6 +172,9 @@ begin
 	begin
 	@(posedge DUT.cpu_clk);
 	end
+	time_out <= 1'b1;
+	@(posedge DUT.cpu_clk);
+	@(posedge DUT.cpu_clk);
 	$display (" ||===================================||");
 	$display (" ||===================================||");
 	$display (" ||                                   ||");

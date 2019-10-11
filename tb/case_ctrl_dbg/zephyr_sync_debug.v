@@ -16,7 +16,12 @@ end
 wire test_end1;
 assign test_end1 = dec_pc == 32'h0000df8;
 
+//performance
+wire [31:0] valid_branch_num = DUT.u_core.u_dec.branch_cnt;
+wire [31:0] mis_predict_num = DUT.u_core.u_dec.mis_predict_cnt;
+wire [31:0] div_stall = DUT.u_core.u_alu.ex_stall_cnt;
 integer fp_z;
+
 
 initial
 begin
@@ -28,12 +33,25 @@ begin
 @(posedge test_end1)
 @(posedge DUT.cpu_clk);
 begin
-	$fclose(fp_z);
 	$display ("=============================================\n");
 	$display ("TEST_END\n");
 	$display ("The application Print data is stored in \n");
 	$display ("out/uart_tx_data_sync.txt\n");
 	$display ("=============================================\n");
+	$fwrite(fp_z, "=========================================\n");
+	$fwrite(fp_z, "                                         \n");
+	$fwrite(fp_z, "Performance Data:                        \n");
+	$fwrite(fp_z, "Total Valid Branch number is %d", valid_branch_num);
+	$fwrite(fp_z, "                                         \n");
+	$fwrite(fp_z, "Mis predict branch number is %d", mis_predict_num);
+	$fwrite(fp_z, "                                         \n");
+	$fwrite(fp_z, "=========================================\n");
+	$fwrite(fp_z, "Stall cycle number is %d due to div", div_stall);
+	$fwrite(fp_z, "                                         \n");
+	$fwrite(fp_z, "=========================================\n");
+	#1;
+	$fclose(fp_z);
+
 	$stop;
 end
 end

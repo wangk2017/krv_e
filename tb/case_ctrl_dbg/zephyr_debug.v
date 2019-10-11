@@ -16,8 +16,17 @@ end
 wire test_end1;
 assign test_end1 = dec_pc == 32'h00000d00;
 
+//performance
+wire [31:0] valid_branch_num = DUT.u_core.u_dec.branch_cnt;
+wire [31:0] mis_predict_num = DUT.u_core.u_dec.mis_predict_cnt;
+wire [31:0] div_stall = DUT.u_core.u_alu.ex_stall_cnt;
+integer fp_z;
+
+
 integer fp_tx;
 integer fp_rx;
+
+
 
 initial
 begin
@@ -27,6 +36,8 @@ begin
 
 	fp_tx =$fopen ("./out/uart_tx_data.txt","w");
 	fp_rx =$fopen ("./out/uart_rx_data.txt","w");
+	fp_z = $fopen ("./out/zephyr_perf.txt","w");
+
 @(posedge test_end1)
 @(posedge DUT.cpu_clk);
 begin
@@ -36,6 +47,17 @@ begin
 	$display ("The application Print data is stored in \n");
 	$display ("out/uart_tx_data.txt\n");
 	$display ("=============================================\n");
+	$display ("Performance analysis is stored in out/zephyr_perf.txt \n");
+	$fwrite(fp_z, "Total Valid Branch number is %d", valid_branch_num);
+	$fwrite(fp_z, "                                         \n");
+	$fwrite(fp_z, "Mis predict branch number is %d", mis_predict_num);
+	$fwrite(fp_z, "                                         \n");
+	$fwrite(fp_z, "=========================================\n");
+	$fwrite(fp_z, "Stall cycle number is %d due to div", div_stall);
+	$fwrite(fp_z, "                                         \n");
+	$fwrite(fp_z, "=========================================\n");
+	#1;
+	$fclose(fp_z);
 	repeat (6000)	//wait for UART done
 	begin
 	@(posedge DUT.cpu_clk);
@@ -45,6 +67,7 @@ begin
 	$display ("The application Print data is received by UART RX and stored in \n");
 	$display ("out/uart_rx_data.txt\n");
 	$display ("================================================================\n");
+
 	$stop;
 end
 end

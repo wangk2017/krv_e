@@ -6,7 +6,7 @@ begin
 #5;
 $display ("=========================================================================== \n");
 $display ("Here is a trick to force the baud rate higher to make the simulation faster \n");
-$display ("you can turn off the trick in tb/dhrystone_debug.v by comment the force \n");
+$display ("you can turn off the trick in tb/coremark_debug.v by comment the force \n");
 $display ("=========================================================================== \n");
 force DUT.u_uart.baud_val = 13'h4;
 end
@@ -36,10 +36,10 @@ initial
 begin
 	$display ("=========\n");
 	$display ("=========\n");
-	$display ("dhrystone\n");
+	$display ("Coremark\n");
 	$display ("=========\n");
 	$display ("=========\n");
-	fp_z =$fopen ("./out/uart_tx_data_dhrystone.txt","w");
+	fp_z =$fopen ("./out/uart_tx_data_coremark.txt","w");
 @(posedge test_end1)
 begin
 	$fwrite(fp_z, "                                         \n");
@@ -75,7 +75,7 @@ begin
 	#1;
 	$fclose(fp_z);
 	$display ("TEST_END\n");
-	$display ("Print data is stored in out/uart_tx_data_dhrystone.txt\n");
+	$display ("Print data is stored in out/uart_tx_data_coremark.txt\n");
 	$stop;
 end
 end
