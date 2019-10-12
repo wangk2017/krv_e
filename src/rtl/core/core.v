@@ -36,6 +36,7 @@ module core (
 	input  wire kplic_int,						//kplic interrupt
 
 //interface with core_timer
+	input wire [63:0] mtime,
 	input wire core_timer_int,					//core_timer interrupt
 
 //instr_dec interface access itcm
@@ -611,7 +612,8 @@ mcsr u_mcsr(
 .mtvec_mode		(mtvec_mode),
 .mtvec_base		(mtvec_base),
 .dtcm_en		(dtcm_en),
-.dtcm_start_addr	(dtcm_start_addr)
+.dtcm_start_addr	(dtcm_start_addr),
+.mtime			(mtime)
 `ifdef KRV_HAS_DBG
 ,
 .pc_ex			(pc_ex),

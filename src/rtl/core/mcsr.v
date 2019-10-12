@@ -62,6 +62,7 @@ output reg mtie,					//mtie
 output reg mstatus_mie,					//mstatus mie
 output reg [1:0] mtvec_mode,				//mtvec mode
 output reg [31:0] mtvec_base,				//mtvec base
+input wire [63:0] mtime,
 
 //interface with mem_ctrl
 output reg dtcm_en,					//dtcm enable
@@ -131,6 +132,8 @@ assign mtval_sel 		= (csr_access_addr == `MTVAL_ADDR);
 wire mip_sel 		= (csr_access_addr == `MIP_ADDR);
 wire tcm_ctrl_sel	= (csr_access_addr == `TCM_CTRL_ADDR);
 wire dtcm_start_addr_sel	= (csr_access_addr == `DTCM_START_ADDR_ADDR);
+wire time_sel 		= (csr_access_addr == `TIME_ADDR);
+wire timeh_sel 		= (csr_access_addr == `TIMEH_ADDR);
 //some dummy regs 
 wire stvec_sel			= (csr_access_addr == `STVEC_ADDR);
 wire satp_sel			= (csr_access_addr == `SATP_ADDR);
@@ -150,7 +153,7 @@ wire dscratch0_sel		= (csr_access_addr == `DSCRATCH0_ADDR);
 
 //1: access non-exist csr exception check
 wire [`MCSR_N - 1 : 0] mcsr_sel;
-assign mcsr_sel = {mvendorid_sel,marchid_sel,mimpid_sel,mhartid_sel,mstatus_sel,misa_sel,mie_sel,mtvec_sel,mepc_sel,mcause_sel,mtval_sel,mip_sel,tcm_ctrl_sel,dtcm_start_addr_sel,stvec_sel, satp_sel, pmpcfg0_sel, pmpaddr0_sel, medeleg_sel, mideleg_sel};
+assign mcsr_sel = {mvendorid_sel,marchid_sel,mimpid_sel,mhartid_sel,mstatus_sel,misa_sel,mie_sel,mtvec_sel,mepc_sel,mcause_sel,mtval_sel,mip_sel,tcm_ctrl_sel,dtcm_start_addr_sel,time_sel,timeh_sel,stvec_sel, satp_sel, pmpcfg0_sel, pmpaddr0_sel, medeleg_sel, mideleg_sel};
 wire non_exist_csr_access;
 assign non_exist_csr_access = (mcsr_rd | mcsr_wr) & (!(|mcsr_sel));
 //2: write read-only csr exception check
@@ -529,6 +532,14 @@ end
 wire [`DATA_WIDTH - 1 : 0] tcm_ctrl_rd_data;
 assign tcm_ctrl_rd_data = (tcm_ctrl_sel)? {31'h0, dtcm_en} : {`DATA_WIDTH{1'b0}};
 
+//time
+wire [`DATA_WIDTH - 1 : 0] time_rd_data;
+assign time_rd_data = (time_sel) ? mtime[31:0] : {`DATA_WIDTH{1'b0}}; 
+
+//time_h
+wire [`DATA_WIDTH - 1 : 0] timeh_rd_data;
+assign timeh_rd_data = (timeh_sel) ? mtime[63:32] : {`DATA_WIDTH{1'b0}}; 
+
 `ifdef KRV_HAS_DBG
 //debug mode registers
 
@@ -662,7 +673,9 @@ assign read_data = {`DATA_WIDTH{valid_mcsr_rd || dbg_rd}} &
 			mcause_rd_data |
 			mtval_rd_data |
 			dtcm_start_addr_rd_data |
-			tcm_ctrl_rd_data
+			tcm_ctrl_rd_data |
+			time_rd_data |
+			timeh_rd_data
 			`ifdef KRV_HAS_DBG
 			|
 			dcsr_rd_data |

@@ -65,6 +65,7 @@ wire dma_dtcm_rdata_valid;
 	wire cpu_clk_g;
 	wire kplic_int;
 	wire core_timer_int;
+	wire [63:0] mtime;
 
 	wire DAXI_access;	
 	wire DAXI_rd0_wr1;		
@@ -430,6 +431,7 @@ core u_core (
 	.boot_addr				(`BOOT_ADDR),
 	.kplic_int				(kplic_int),	
 	.core_timer_int				(core_timer_int),	
+	.mtime					(mtime),
 	.wfi					(wfi),
 
 	.instr_itcm_addr			(instr_itcm_addr),
@@ -1003,6 +1005,7 @@ core_timer u_core_timer (
 .RDATA			(RDATA_ctimer		),
 .RRESP			(RRESP_ctimer		),
 
+.mtime			(mtime			),
 .core_timer_int		(core_timer_int)
 );
 `else

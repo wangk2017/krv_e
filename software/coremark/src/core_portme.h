@@ -45,8 +45,7 @@
 #define HAS_PRINTF 0
 #endif
 
-#include "sc_print.h"
-#define ee_printf sc_printf
+#define ee_printf printf
 
 /* static inline int ee_printf(const char *fmt, ...) {} */
 

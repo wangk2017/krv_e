@@ -21,6 +21,7 @@ input wire [`AXI_DATA_WIDTH - 1 : 0] write_data,		//reg write data
 output wire [`AXI_DATA_WIDTH - 1 : 0] read_data,		//reg read data
 output wire read_data_valid,					//reg read data valid
 
+output reg [63:0] mtime,
 output reg timer_int
 
 );
@@ -29,7 +30,6 @@ output reg timer_int
 //-------------------------------------------------------------------//
 //1: Register address decode
 //-------------------------------------------------------------------//
-reg [64:0] mtime;
 wire [31:0] mtime_l = mtime[31:0];
 wire [31:0] mtime_h = mtime[63:32];
 reg [31:0] mtimecmp_l;

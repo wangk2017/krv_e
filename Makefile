@@ -158,7 +158,7 @@ coremark.sim: hex_file/sw/coremark.hex
 	iverilog -g2009 -I ./tb -I ./tb/case_ctrl_dbg -I ./src/rtl/inc -o ./out/krv ./tb/krv_e_tb.v ./tb/rom.v ./src/rtl/*/*.v
 	vvp -l out/$@ -v -n ./out/krv -lxt2
 	cp out/krv.vcd out/krv.lxt
-	
+
 
 check_fail:
 	grep "Fail" out/*.sim

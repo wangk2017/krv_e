@@ -87,7 +87,7 @@ begin
 	if(uart_tx_wr)
 		begin
 			$display ("UART Transmitt");
-			$display ("UART TX_DATA is %h \n",uart_tx_data);
+			$display ("UART TX_DATA is %s \n",uart_tx_data);
 			$fwrite(fp_z, "%s", uart_tx_data);
 		end
 

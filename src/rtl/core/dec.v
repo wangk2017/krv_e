@@ -650,7 +650,7 @@ begin
 	end
 	else
 	begin
-		if (jalr_ex || exception_met)
+		if (jalr_ex || exception_met /*flush_dec*/)
 			begin
 				beq_ex <= 1'b0;
 				bne_ex <= 1'b0;
@@ -661,7 +661,7 @@ begin
 			end
 			else if(ex_ready)
 			begin
-				if(dec_bubble)
+				if(dec_bubble || flush_dec)
 				begin
 					beq_ex <= 1'b0;
 					bne_ex <= 1'b0;

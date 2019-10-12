@@ -4,7 +4,7 @@
 `define DATA_WIDTH 32
 `define ADDR_WIDTH 32
 `define SHAMT_WIDTH 5
-`define MCSR_N 20
+`define MCSR_N 22
 `define EMEM_BUFFER_WIDTH `DATA_WIDTH + `ADDR_WIDTH + 4
 
 //Instruction format
@@ -96,6 +96,8 @@
 `define PMPADDR0_ADDR		12'h3b0
 `define MEDELEG_ADDR		12'h302
 `define MIDELEG_ADDR		12'h303
+`define TIME_ADDR		12'hc01
+`define TIMEH_ADDR		12'hc81
 
 //trigger csrs
 `define TSELECT_ADDR		12'h7a0

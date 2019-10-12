@@ -34,7 +34,7 @@ CFLAGS += -DITERATIONS=$(ITERATIONS)
 
 
 
-SRCS = src/core_portme.c src/sc_print.c src/core_list_join.c src/core_matrix.c src/core_main.c src/core_util.c ./src/core_state.c  ../common/start.S
+SRCS = src/core_portme.c ../common/stdlib.c src/core_list_join.c src/core_matrix.c src/core_main.c src/core_util.c ./src/core_state.c  ../common/start.S
 #../common/stdlib.c
 LDFLAGS += -lc
 LDSCRIPT = ../common/mapping.ld

@@ -45,6 +45,7 @@ output [1:0]				RRESP,
 
 
 //core timer signals
+output wire [63:0] mtime,
 output wire core_timer_int				//interrupt notification to core
 
 );
@@ -100,6 +101,7 @@ axi_slave axi_slave_kplic(
 .write_data		(ip_write_data),
 .read_data		(ip_read_data),
 .read_data_valid	(ip_read_data_valid),
+.mtime			(mtime			),
 .timer_int		(core_timer_int)
 );
 

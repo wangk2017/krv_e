@@ -87,13 +87,18 @@ begin
 	if(uart_tx_wr)
 		begin
 			$display ("UART Transmitt");
-			$display ("UART TX_DATA is %h \n",uart_tx_data);
+			$display ("UART TX_DATA is %s \n",uart_tx_data);
 			$fwrite(fp_z, "%s", uart_tx_data);
 		end
 
 end
-parameter MAIN 			= 32'h00010084;
-parameter MAINDONE		= 32'h0001007c;
+parameter MAIN 			= 32'h00000084;
+parameter INIT 			= 32'h00000874;
+parameter GET_SEED_32 		= 32'h00001b88;
+parameter START_TIME 		= 32'h0000080c;
+parameter ITERATE 		= 32'h00001ae4;
+parameter STOP_TIME 		= 32'h0000082c;
+parameter MAINDONE		= 32'h0000007c;
 
 wire [31:0] mret_addr = DUT.u_core.u_fetch.mepc;
 wire [31:0] mret_instr = DUT.u_core.u_fetch.mret;
@@ -154,6 +159,37 @@ begin
 			$display ("@time %t  !",$time);
 			$display ("\n");
 		end
+		INIT 		:	
+		begin
+			$display ("init Start");
+			$display ("@time %t  !",$time);
+			$display ("\n");
+		end
+		GET_SEED_32 	:	
+		begin
+			$display ("get seed32 Start");
+			$display ("@time %t  !",$time);
+			$display ("\n");
+		end
+		START_TIME 	:	
+		begin
+			$display ("start time Start");
+			$display ("@time %t  !",$time);
+			$display ("\n");
+		end
+		ITERATE 	:	
+		begin
+			$display ("iterate Start");
+			$display ("@time %t  !",$time);
+			$display ("\n");
+		end
+		STOP_TIME 	:	
+		begin
+			$display ("stop time Start");
+			$display ("@time %t  !",$time);
+			$display ("\n");
+		end
+
 		MAINDONE:	//main
 		begin
 			$display ("Main Done");

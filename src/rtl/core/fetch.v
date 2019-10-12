@@ -244,6 +244,7 @@ begin
 			if(if_bubble || jump)
 			begin
 				instr_dec <= {`INSTR_WIDTH{1'b0}};
+				predict_taken_dec <= 1'b0;
 			end
 			else
 			begin
