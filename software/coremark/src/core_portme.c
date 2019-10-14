@@ -41,7 +41,7 @@ CORETIMETYPE barebones_clock() {
 		: "=r" (n));
 	return n;
 }
-#define CLOCKS_PER_SEC	10000000
+#define CLOCKS_PER_SEC	25000000
 
 /* Define : TIMER_RES_DIVIDER
 	Divider to trade off timer resolution and total time that can be measured.
@@ -104,6 +104,13 @@ secs_ret time_in_secs(CORE_TICKS ticks) {
 	secs_ret retval=((secs_ret)ticks) / (secs_ret)EE_TICKS_PER_SEC;
 	return retval;
 }
+
+secs_ret time_in_secs_by100(CORE_TICKS ticks) {
+	secs_ret retval=100* ((secs_ret)ticks) / (secs_ret)EE_TICKS_PER_SEC;
+	return retval;
+}
+
+
 
 ee_u32 default_num_contexts=1;
 

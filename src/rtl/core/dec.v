@@ -1065,7 +1065,7 @@ wire [31:0] fence_stall_cnt;
 en_cnt u_fence_stall_cnt (.clk(cpu_clk), .rstn(cpu_rstn), .en(fence_stall), .cnt (fence_stall_cnt));
 
 wire [31:0] branch_cnt;
-wire branch = instruction_is_branch && (!flush_dec);
+wire branch = instruction_is_branch && (!flush_dec) && (dec_ready);
 en_cnt u_branch_cnt (.clk(cpu_clk), .rstn(cpu_rstn), .en(branch), .cnt (branch_cnt));
 
 wire [31:0] mis_predict_cnt;

@@ -165,7 +165,7 @@ initial
 begin
 	time_out <= 1'b0;
 `ifndef RISCV
-	repeat (1000000)
+	repeat (250000000)
 `else
 	repeat (80000)
 `endif

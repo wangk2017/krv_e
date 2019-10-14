@@ -275,23 +275,43 @@ MAIN_RETURN_TYPE main(int argc, char *argv[]) {
 	}
 	total_errors+=check_data_types();
 	/* and report results */
-	ee_printf("CoreMark Size    : %lu\n", (long unsigned) results[0].size);
-	ee_printf("Total ticks      : %lu\n", (long unsigned) total_time);
+	//ee_printf("CoreMark Size    : %lu\n", (long unsigned) results[0].size);
+	//ee_printf("Total ticks      : %lu\n", (long unsigned) total_time);
+	ee_printf("CoreMark Size    : %d\n", results[0].size);
+	ee_printf("Total ticks      : %d\n", total_time);
 #if HAS_FLOAT
 	ee_printf("Total time (secs): %f\n",time_in_secs(total_time));
 	if (time_in_secs(total_time) > 0)
 		ee_printf("Iterations/Sec   : %f\n",default_num_contexts*results[0].iterations/time_in_secs(total_time));
 #else 
-	ee_printf("Total time (secs): %d\n",time_in_secs(total_time));
-	if (time_in_secs(total_time) > 0)
-		ee_printf("Iterations/Sec   : %d\n",default_num_contexts*results[0].iterations/time_in_secs(total_time));
+	ee_printf("Total time (secs): ");
+	int total_secs = 100ll * total_time/25000000;
+	int total_secs_natural = total_secs/100;
+	int total_secs_real = total_secs - 100*total_secs_natural;
+	if(total_secs_natural < 0)
+	ee_printf("0.");
+	else
+	ee_printf("%d.",total_secs_natural);
+	if(total_secs_real < 10)
+	ee_printf("0");
+	ee_printf("%d\n",total_secs_real);
+	if (total_secs_natural > 0)
+	ee_printf("Iterations/Sec   : ");
+	int ite_per_sec = 10000ll * default_num_contexts*results[0].iterations/time_in_secs_by100(total_time);
+	int ite_per_sec_natural = ite_per_sec/100;
+	int ite_per_sec_real = ite_per_sec - 100*ite_per_sec_natural;
+		ee_printf("%d.", ite_per_sec_natural);
+	if(ite_per_sec_real < 10)
+	ee_printf("0");
+	ee_printf("%d\n",ite_per_sec_real);
 #endif
-	if (time_in_secs(total_time) < 10) {
-		ee_printf("ERROR! Must execute for at least 10 secs for a valid result!\n");
+	if ( total_secs < 10) {
+		ee_printf("ERROR! Must execute for at least 0.1 secs for a valid result!\n");
 		total_errors++;
 	}
 
-	ee_printf("Iterations       : %lu\n", (long unsigned) default_num_contexts*results[0].iterations);
+//	ee_printf("Iterations       : %lu\n", (long unsigned) default_num_contexts*results[0].iterations);
+	ee_printf("Iterations       : %d\n", default_num_contexts*results[0].iterations);
 	ee_printf("Compiler version : %s\n",COMPILER_VERSION);
 	ee_printf("Compiler flags   : %s\n",COMPILER_FLAGS);
 #if (MULTITHREAD>1)
@@ -299,18 +319,22 @@ MAIN_RETURN_TYPE main(int argc, char *argv[]) {
 #endif
 	ee_printf("Memory location  : %s\n",MEM_LOCATION);
 	/* output for verification */
-	ee_printf("seedcrc          : 0x%04x\n",seedcrc);
+//	ee_printf("seedcrc          : 0x%04x\n",seedcrc);
+	ee_printf("seedcrc          : 0x%d\n",seedcrc);
 	if (results[0].execs & ID_LIST)
 		for (i=0 ; i<default_num_contexts; i++) 
-			ee_printf("[%d]crclist       : 0x%04x\n",i,results[i].crclist);
+		//	ee_printf("[%d]crclist       : 0x%04x\n",i,results[i].crclist);
+			ee_printf("[%d]crclist       : 0x%d\n",i,results[i].crclist);
 	if (results[0].execs & ID_MATRIX) 
 		for (i=0 ; i<default_num_contexts; i++) 
-			ee_printf("[%d]crcmatrix     : 0x%04x\n",i,results[i].crcmatrix);
+//			ee_printf("[%d]crcmatrix     : 0x%04x\n",i,results[i].crcmatrix);
+			ee_printf("[%d]crcmatrix     : 0x%d\n",i,results[i].crcmatrix);
 	if (results[0].execs & ID_STATE)
 		for (i=0 ; i<default_num_contexts; i++) 
-			ee_printf("[%d]crcstate      : 0x%04x\n",i,results[i].crcstate);
+		//	ee_printf("[%d]crcstate      : 0x%d\n",i,results[i].crcstate);
 	for (i=0 ; i<default_num_contexts; i++) 
-		ee_printf("[%d]crcfinal      : 0x%04x\n",i,results[i].crc);
+		//ee_printf("[%d]crcfinal      : 0x%04x\n",i,results[i].crc);
+		ee_printf("[%d]crcfinal      : 0x%d\n",i,results[i].crc);
 	if (total_errors==0) {
 		ee_printf("Correct operation validated. See README.md for run and reporting rules.\n");
 #if HAS_FLOAT
@@ -325,7 +349,7 @@ MAIN_RETURN_TYPE main(int argc, char *argv[]) {
 #if (MULTITHREAD>1)
 			ee_printf(" / %d:%s",default_num_contexts,PARALLEL_METHOD);
 #endif
-			ee_printf("\n");
+			ee_printf("END\n");
 		}
 #endif
 	}
@@ -333,6 +357,14 @@ MAIN_RETURN_TYPE main(int argc, char *argv[]) {
 		ee_printf("Errors detected\n");
 	if (total_errors<0)
 		ee_printf("Cannot validate operation for these seed values, please compare with results on a known platform.\n");
+	ee_printf ("CoreMark 1.0 :             ");
+	int coremark = 10000ll * default_num_contexts*results[0].iterations/time_in_secs_by100(total_time);
+	int coremarkNatural = coremark/100;
+	int coremarkReal = (coremark - 100*coremarkNatural);
+	ee_printf("%d.", coremarkNatural);
+	if(coremarkReal < 10) 
+	ee_printf("0");
+	ee_printf("%d\n", coremarkReal);
 
 #if (MEM_METHOD==MEM_MALLOC)
 	for (i=0 ; i<MULTITHREAD; i++) 

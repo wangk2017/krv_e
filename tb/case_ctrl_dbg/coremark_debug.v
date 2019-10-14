@@ -40,7 +40,7 @@ begin
 	$display ("=========\n");
 	$display ("=========\n");
 	fp_z =$fopen ("./out/uart_tx_data_coremark.txt","w");
-@(posedge test_end1)
+@(posedge test_end1 || time_out)
 begin
 	$fwrite(fp_z, "                                         \n");
 	$fwrite(fp_z, "=========================================\n");
