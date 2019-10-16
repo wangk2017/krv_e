@@ -41,8 +41,7 @@ empty
 
 parameter DATA_WIDTH=8;
 parameter FIFO_DEPTH=8;
-//parameter PTR_WIDTH log2(FIFO_DEPTH) ;
-parameter PTR_WIDTH=3;
+parameter PTR_WIDTH=$clog2(FIFO_DEPTH) ;
 // Port Declaration
 // 1: Write Side
 input wr_clk;      			// clock of write side

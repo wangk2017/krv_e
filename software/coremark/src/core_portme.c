@@ -111,6 +111,12 @@ secs_ret time_in_secs_by100(CORE_TICKS ticks) {
 }
 
 
+secs_ret time_in_secs_by1000(CORE_TICKS ticks) {
+	secs_ret retval=1000* ((secs_ret)ticks) / (secs_ret)EE_TICKS_PER_SEC;
+	return retval;
+}
+
+
 
 ee_u32 default_num_contexts=1;
 

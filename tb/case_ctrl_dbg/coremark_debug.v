@@ -19,16 +19,7 @@ assign test_end1 = dec_pc == 32'h000007c;
 //assign test_end1 = (uart_tx_data==8'hff);
 
 //performance
-wire [31:0] valid_branch_num = DUT.u_core.u_dec.branch_cnt;
-wire [31:0] mis_predict_num = DUT.u_core.u_dec.mis_predict_cnt;
-wire [31:0] correct_predict_num = valid_branch_num - mis_predict_num;
-
-wire [31:0] div_stall = DUT.u_core.u_alu.ex_stall_cnt;
-wire [31:0] jal_flush = DUT.u_core.u_fetch.jal_dec_cnt;
-wire [31:0] jalr_flush = DUT.u_core.u_fetch.jalr_ex_cnt;
-wire [31:0] load_hazard_stall = DUT.u_core.u_dec.load_hazard_stall_cnt;
-wire [31:0] load_stall = DUT.u_core.u_dmem_ctrl.load_stall_cnt;
-wire [31:0] store_stall = DUT.u_core.u_dmem_ctrl.store_stall_cnt;
+`include "perf.v"
 
 integer fp_z;
 
@@ -42,36 +33,6 @@ begin
 	fp_z =$fopen ("./out/uart_tx_data_coremark.txt","w");
 @(posedge test_end1 || time_out)
 begin
-	$fwrite(fp_z, "                                         \n");
-	$fwrite(fp_z, "=========================================\n");
-	$fwrite(fp_z, "                                         \n");
-	$fwrite(fp_z, "Performance Data Details                 \n");
-	$fwrite(fp_z, "=========================================\n");
-	$fwrite(fp_z, "Total Valid Branch number is %d", valid_branch_num);
-	$fwrite(fp_z, "                                         \n");
-	$fwrite(fp_z, "Mis predict branch number is %d", mis_predict_num);
-	$fwrite(fp_z, "                                         \n");
-	$fwrite(fp_z, "Correct predict branch number is %d", correct_predict_num);
-	$fwrite(fp_z, "                                         \n");
-	$fwrite(fp_z, "=========================================\n");
-	$fwrite(fp_z, "Div stall cycle number is %d due to div", div_stall);
-	$fwrite(fp_z, "                                         \n");
-	$fwrite(fp_z, "=========================================\n");
-	$fwrite(fp_z, "Jal flush cycle number is %d due to jal", jal_flush);
-	$fwrite(fp_z, "                                         \n");
-	$fwrite(fp_z, "=========================================\n");
-	$fwrite(fp_z, "Jalr flush cycle number is %d due to jalr", jalr_flush);
-	$fwrite(fp_z, "                                         \n");
-	$fwrite(fp_z, "=========================================\n");
-	$fwrite(fp_z, "load_hazard_stall cycle number is %d due to load hazard", load_hazard_stall);
-	$fwrite(fp_z, "                                         \n");
-	$fwrite(fp_z, "=========================================\n");
-	$fwrite(fp_z, "load_stall cycle number is %d due to load", load_stall);
-	$fwrite(fp_z, "                                         \n");
-	$fwrite(fp_z, "=========================================\n");
-	$fwrite(fp_z, "store_stall cycle number is %d due to store", store_stall);
-	$fwrite(fp_z, "                                         \n");
-	$fwrite(fp_z, "=========================================\n");
 	#1;
 	$fclose(fp_z);
 	$display ("TEST_END\n");
@@ -80,7 +41,6 @@ begin
 end
 end
 
-wire cpu_clk = DUT.cpu_clk;
 
 always @(posedge cpu_clk)
 begin

@@ -25,6 +25,8 @@ krv_e DUT (
 	#20 clk_in <= ~clk_in;
 	end
 	
+wire cpu_clk = DUT.cpu_clk;
+wire cpu_rstn = DUT.cpu_rstn;
 wire [31:0] dec_pc = DUT.u_core.u_fetch.pc_dec;
 wire uart_tx_wr = DUT.u_uart.tx_data_reg_wr;
 wire[7:0] uart_tx_data = DUT.u_uart.tx_data;

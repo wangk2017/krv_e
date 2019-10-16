@@ -284,29 +284,31 @@ MAIN_RETURN_TYPE main(int argc, char *argv[]) {
 	if (time_in_secs(total_time) > 0)
 		ee_printf("Iterations/Sec   : %f\n",default_num_contexts*results[0].iterations/time_in_secs(total_time));
 #else 
-	ee_printf("Total time (secs): ");
-	int total_secs = 100ll * total_time/25000000;
-	int total_secs_natural = total_secs/100;
-	int total_secs_real = total_secs - 100*total_secs_natural;
+	int total_secs_by1000 = time_in_secs_by1000(total_time);
+	ee_printf("total_secs_by1000 : %d\n",total_secs_by1000);
+	int total_secs_natural = total_secs_by1000/1000;
+	int total_secs_real = total_secs_by1000 - 1000*total_secs_natural;
+/*
 	if(total_secs_natural < 0)
 	ee_printf("0.");
 	else
+*/
+	ee_printf("Total time (secs): ");
 	ee_printf("%d.",total_secs_natural);
-	if(total_secs_real < 10)
+	if(total_secs_real < 100)
 	ee_printf("0");
 	ee_printf("%d\n",total_secs_real);
-	if (total_secs_natural > 0)
 	ee_printf("Iterations/Sec   : ");
-	int ite_per_sec = 10000ll * default_num_contexts*results[0].iterations/time_in_secs_by100(total_time);
-	int ite_per_sec_natural = ite_per_sec/100;
-	int ite_per_sec_real = ite_per_sec - 100*ite_per_sec_natural;
-		ee_printf("%d.", ite_per_sec_natural);
-	if(ite_per_sec_real < 10)
+	int ite_per_sec = 1000000ll * default_num_contexts*results[0].iterations/total_secs_by1000;
+	int ite_per_sec_natural = ite_per_sec/1000;
+	int ite_per_sec_real = ite_per_sec - 1000*ite_per_sec_natural;
+	ee_printf("%d.", ite_per_sec_natural);
+	if(ite_per_sec_real < 100)
 	ee_printf("0");
 	ee_printf("%d\n",ite_per_sec_real);
 #endif
-	if ( total_secs < 10) {
-		ee_printf("ERROR! Must execute for at least 0.1 secs for a valid result!\n");
+	if ( total_secs_by1000 < 10) {
+		ee_printf("ERROR! Must execute for at least 0.01 secs for a valid result!\n");
 		total_errors++;
 	}
 
@@ -358,11 +360,11 @@ MAIN_RETURN_TYPE main(int argc, char *argv[]) {
 	if (total_errors<0)
 		ee_printf("Cannot validate operation for these seed values, please compare with results on a known platform.\n");
 	ee_printf ("CoreMark 1.0 :             ");
-	int coremark = 10000ll * default_num_contexts*results[0].iterations/time_in_secs_by100(total_time);
-	int coremarkNatural = coremark/100;
-	int coremarkReal = (coremark - 100*coremarkNatural);
+	int coremark = 1000000ll * default_num_contexts*results[0].iterations/total_secs_by1000;
+	int coremarkNatural = coremark/1000;
+	int coremarkReal = (coremark - 1000*coremarkNatural);
 	ee_printf("%d.", coremarkNatural);
-	if(coremarkReal < 10) 
+	if(coremarkReal < 100) 
 	ee_printf("0");
 	ee_printf("%d\n", coremarkReal);
 

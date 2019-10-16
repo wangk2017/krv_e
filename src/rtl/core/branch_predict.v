@@ -23,24 +23,33 @@
 `include "core_defines.vh"
 
 module branch_predict (
-//global signals 
-	input cpu_clk,						//cpu clock
-	input cpu_rstn,						//cpu reset, active low
-//interface with fetch
+	input cpu_clk,						
+	input cpu_rstn,				
 	input [`ADDR_WIDTH - 1 : 0] next_pc,
 	input [`ADDR_WIDTH - 1 : 0] pc,
 	output predict_taken,
+	output is_loop,
 	output [`ADDR_WIDTH - 1 : 0] predict_target_pc,
 	input [`ADDR_WIDTH - 1 : 0] branch_target_pc,
-//interface with alu
 	input branch_ex,
 	input [`ADDR_WIDTH - 1 : 0] branch_pc_ex,
+	input [`DATA_WIDTH - 1 : 0] src_data1_ex,
+	input [`DATA_WIDTH - 1 : 0] src_data2_ex,
+	input is_loop_ex,
 	input branch_taken_ex
 );
 
+
+
+//parameters
+parameter ENTRY_NUM = 256;
+parameter PR_ADDR_WIDTH = $clog2(ENTRY_NUM);
+
+//----------------------------------------------------------------------------//
 //BHT - branch history table
-wire [7:0] bht_raddr = next_pc[9:2];
-wire [7:0] bht_waddr = branch_pc_ex[9:2];
+//----------------------------------------------------------------------------//
+wire [PR_ADDR_WIDTH - 1 : 0] bht_raddr = next_pc[PR_ADDR_WIDTH + 1 : 2];
+wire [PR_ADDR_WIDTH - 1 : 0] bht_waddr = branch_pc_ex[PR_ADDR_WIDTH + 1 : 2];
 wire [`ADDR_WIDTH - 1 : 0] bht_w_pc = branch_pc_ex;
 wire bht_wen = branch_ex;
 
@@ -72,68 +81,50 @@ end
 wire hit = (pc == bht_r_pc);
 
 
-//predict1
-wire [7:0] predict1_raddr = next_pc[9:2];
-wire [7:0] predict1_waddr = branch_pc_ex[9:2];
+//predict1 - basic predictor
+wire [PR_ADDR_WIDTH - 1 : 0] predict1_raddr = next_pc[PR_ADDR_WIDTH + 1 : 2];
+wire [PR_ADDR_WIDTH - 1 : 0] predict1_waddr = branch_pc_ex[PR_ADDR_WIDTH + 1 : 2];
 wire predict1_wen = branch_ex;
 
-reg[1:0] predict1[255:0];
-reg[1:0] predict1_rd_data;
+wire[1:0] predict1_rd_data;
 
-integer i;
+basic_predictor_2b #(.entry_num(ENTRY_NUM),.addr_width(PR_ADDR_WIDTH)) u_predict1 (
+.cpu_clk		(cpu_clk),
+.cpu_rstn		(cpu_rstn),
+.predictor_raddr 	(predict1_raddr),
+.predictor_waddr 	(predict1_waddr),
+.predictor_wen	 	(predict1_wen),
+.branch_taken_ex 	(branch_taken_ex),
+.predictor_rd_data	(predict1_rd_data)
+);
 
-always @ (posedge cpu_clk or negedge cpu_rstn)
-begin
-	if(!cpu_rstn)
-	begin
-		for(i=0; i<256; i=i+1)
-		predict1[i] <= 2'b00;	
-	end
-	else
-	begin
-		predict1_rd_data <= predict1[predict1_raddr];	
-		if(predict1_wen)
-		begin
-			case(predict1[predict1_waddr])
-			2'b00: begin
-				if(branch_taken_ex)
-				predict1[predict1_waddr] <= 2'b01;
-				else
-				predict1[predict1_waddr] <= 2'b00;
-			end
-			2'b01: begin
-				if(branch_taken_ex)
-				predict1[predict1_waddr] <= 2'b10;
-				else
-				predict1[predict1_waddr] <= 2'b00;
-			end
-			2'b10: begin
-				if(branch_taken_ex)
-				predict1[predict1_waddr] <= 2'b11;
-				else
-				predict1[predict1_waddr] <= 2'b01;
-			end
-			2'b11: begin
-				if(branch_taken_ex)
-				predict1[predict1_waddr] <= 2'b11;
-				else
-				predict1[predict1_waddr] <= 2'b10;
-			end
-			endcase
-		end
-	end
-end
+wire predict2_rd_data;
+loop_predictor u_predict2(
+.cpu_clk		(cpu_clk),
+.cpu_rstn		(cpu_rstn),
+.pc_ex			(branch_pc_ex),
+.branch_ex		(branch_ex),
+.pc			(pc),
+.is_loop_ex		(is_loop_ex),
+.src_data1_ex		(src_data1_ex),
+.src_data2_ex		(src_data2_ex),
+.is_loop		(is_loop),
+.loop_predict_taken	(predict2_rd_data)
+);
+
+
 
 //predictor selector
 wire predictor;
-assign predictor = predict1_rd_data[1];
+assign predictor = is_loop? predict2_rd_data : predict1_rd_data[1];
 
+//assign predict_taken = 1'b0;
 assign predict_taken = hit && predictor;
 
 //BTT - branch target table
 
-wire [7:0] btt_raddr = next_pc[9:2];
-wire [7:0] btt_waddr = branch_pc_ex[9:2];
+wire [PR_ADDR_WIDTH - 1 : 0] btt_raddr = next_pc[PR_ADDR_WIDTH + 1 : 2];
+wire [PR_ADDR_WIDTH - 1 : 0] btt_waddr = branch_pc_ex[PR_ADDR_WIDTH + 1 : 2];
 wire [`ADDR_WIDTH - 1 : 0] btt_w_pc = branch_target_pc;
 wire btt_wen = branch_ex;
 

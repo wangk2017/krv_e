@@ -37,15 +37,18 @@ input wire jal_dec, 					// jal
 input wire jalr_ex, 					// jalr
 input wire fence_dec,					// fence
 output reg predict_taken_dec,				// propagate predict taken to DEC stage
+output reg is_loop_dec,					// propagate loop detection to DEC stage
 output reg [`ADDR_WIDTH - 1 : 0] pc_dec,		// Program counter at DEC stage
 output reg [`ADDR_WIDTH - 1 : 0] pc_plus4_dec,		// Program counter plus 4 at DEC stage
 input wire dec_ready, 					// dec ready signal
 output reg if_valid,					// indication of instruction valid
 output reg [`INSTR_WIDTH - 1 : 0] instr_dec,		// instruction
 input wire signed [`DATA_WIDTH - 1 : 0] src_data1_ex,	// source data 1 at EX stage
+input wire signed [`DATA_WIDTH - 1 : 0] src_data2_ex,	// source data 1 at EX stage
 input wire signed [`DATA_WIDTH - 1 : 0] imm_ex,		// immediate at ex stage
 input wire signed [`DATA_WIDTH - 1 : 0] imm_dec,	// immediate at dec stage
-input wire predict_taken_ex,				// propagate predict taken to DEC stage
+input wire is_loop_ex,					// loop dectection at EX stage
+input wire predict_taken_ex,				// predict taken at EX stage
 input wire [`ADDR_WIDTH - 1 : 0] pc_ex,			// Program counter value at EX stage
 input wire [`ADDR_WIDTH - 1 : 0] pc_plus4_ex,		// Program counter plus 4 at DEC stage
 output wire mis_predict,				// mis predict of branch
@@ -214,6 +217,7 @@ wire flush_if = fence_dec || fence_dec_r || jal_dec_r || jalr_ex_r || mis_predic
 ;
 
 wire predict_taken;
+wire is_loop;
 wire [`ADDR_WIDTH - 1 : 0] predict_target_pc;
 wire[`ADDR_WIDTH - 1 : 0] branch_target_pc = pc_ex + imm_ex;
 wire[`ADDR_WIDTH - 1 : 0] branch_pc_ex = pc_ex; 
@@ -229,6 +233,7 @@ begin
 		pc_plus4_dec <= boot_addr;
 		if_valid <= 1'b0;
 		predict_taken_dec <= 1'b0;
+		is_loop_dec <= 1'b0;
 	end
 	else
 	begin
@@ -237,6 +242,7 @@ begin
 			instr_dec <= {`INSTR_WIDTH{1'b0}};
 			if_valid <= 1'b0;
 			predict_taken_dec <= 1'b0;
+			is_loop_dec <= 1'b0;
 		end
 		else if(dec_ready)
 		begin
@@ -245,6 +251,7 @@ begin
 			begin
 				instr_dec <= {`INSTR_WIDTH{1'b0}};
 				predict_taken_dec <= 1'b0;
+				is_loop_dec <= 1'b0;
 			end
 			else
 			begin
@@ -252,6 +259,7 @@ begin
 				pc_dec <= pc;
 				pc_plus4_dec <= pc_plus4;
 				predict_taken_dec <= predict_taken;
+				is_loop_dec <= is_loop;
 			end
 		end
 	end
@@ -304,9 +312,13 @@ branch_predict u_branch_predict(
 .next_pc		(next_pc		),
 .pc			(pc			),
 .predict_taken		(predict_taken		),
+.is_loop		(is_loop		),
 .predict_target_pc	(predict_target_pc	),
+.is_loop_ex		(is_loop_ex		),
 .branch_ex		(branch_ex		),
 .branch_pc_ex		(branch_pc_ex		),
+.src_data1_ex		(src_data1_ex		),
+.src_data2_ex		(src_data2_ex		),
 .branch_target_pc	(branch_target_pc	),
 .branch_taken_ex	(branch_taken_ex	)
 );
@@ -387,8 +399,11 @@ assign pc_misaligned = (|pc[1:0]);
 assign fault_pc = pc_misaligned ? pc : {`ADDR_WIDTH{1'b0}};
 
 //performance counter
-wire [31:0] branch_taken_ex_cnt;
-en_cnt u_branch_taken_ex_cnt (.clk(cpu_clk), .rstn(cpu_rstn), .en(branch_taken_ex), .cnt (branch_taken_ex_cnt));
+wire [31:0] mis_predict_taken_cnt;
+en_cnt u_mis_predict_taken_cnt (.clk(cpu_clk), .rstn(cpu_rstn), .en(mis_predict_taken && dec_ready), .cnt (mis_predict_taken_cnt));
+
+wire [31:0] mis_predict_not_taken_cnt;
+en_cnt u_mis_predict_not_taken_cnt (.clk(cpu_clk), .rstn(cpu_rstn), .en(mis_predict_not_taken && dec_ready), .cnt (mis_predict_not_taken_cnt));
 
 wire [31:0] jal_dec_cnt;
 en_cnt u_jal_dec_cnt (.clk(cpu_clk), .rstn(cpu_rstn), .en(jal_dec), .cnt (jal_dec_cnt));

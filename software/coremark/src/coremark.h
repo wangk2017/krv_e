@@ -65,6 +65,8 @@ void start_time(void);
 void stop_time(void);
 CORE_TICKS get_time(void);
 secs_ret time_in_secs(CORE_TICKS ticks);
+secs_ret time_in_secs_by100(CORE_TICKS ticks);
+secs_ret time_in_secs_by1000(CORE_TICKS ticks);
 
 /* Misc useful functions */
 ee_u16 crcu8(ee_u8 data, ee_u16 crc);

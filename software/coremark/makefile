@@ -19,7 +19,7 @@ ifeq ($(COMPRESSED),yes)
 endif
 
 ifeq ("$(ITERATIONS)","")
-ITERATIONS=10
+ITERATIONS=1
 endif
 
 FLAGS = -O2 -funroll-loops -fpeel-loops -fgcse-sm -fgcse-las
