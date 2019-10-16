@@ -316,6 +316,8 @@ branch_predict u_branch_predict(
 .predict_target_pc	(predict_target_pc	),
 .is_loop_ex		(is_loop_ex		),
 .branch_ex		(branch_ex		),
+.jal_dec		(jal_dec		),
+.jalr_ex		(jalr_ex		),
 .branch_pc_ex		(branch_pc_ex		),
 .src_data1_ex		(src_data1_ex		),
 .src_data2_ex		(src_data2_ex		),

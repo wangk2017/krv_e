@@ -28,6 +28,8 @@ input wire cpu_rstn,
 
 input wire[`ADDR_WIDTH - 1 : 0] pc_ex,
 input wire branch_ex,
+input wire jal_dec,
+input wire jalr_ex,
 input wire[`ADDR_WIDTH - 1 : 0] pc,
 
 input wire is_loop_ex,
@@ -55,7 +57,9 @@ begin
 	end
 	else 
 	begin
-		if(branch_ex)
+		if(jal_dec || jalr_ex)
+		loop_pc <= {`ADDR_WIDTH{1'b0}};
+		else if(branch_ex)
 		loop_pc <= pc_ex;
 	end
 end
@@ -114,11 +118,10 @@ begin
 	end
 end
 
-wire [`DATA_WIDTH - 1 : 0] loop_gap = /*is_loop_ex ?*/ ((loop_src_data1 > loop_src_data2 ) ? (loop_src_data1 - loop_src_data2) : (loop_src_data2 - loop_src_data1)) /*: {`DATA_WIDTH{1'b0}}*/;
+wire [`DATA_WIDTH - 1 : 0] loop_gap = is_loop ? ((loop_src_data1 > loop_src_data2 ) ? (loop_src_data1 - loop_src_data2) : (loop_src_data2 - loop_src_data1)) : {`DATA_WIDTH{1'b0}};
 
-wire [`DATA_WIDTH - 1 : 0] loop_times_left = (|loop_incr) ? (loop_gap/loop_incr) : {`DATA_WIDTH{1'b0}};
 
-assign loop_predict_taken = loop_times_left > 1;
+assign loop_predict_taken = (loop_gap > loop_incr);
 
 
 endmodule
