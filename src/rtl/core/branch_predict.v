@@ -82,13 +82,25 @@ end
 
 wire hit = (pc == bht_r_pc);
 
+wire[1:0] predict1_rd_data;
+`ifdef CORRELATING_PREDICTION
+//predict1 - 2-level 2-bit predictor
+predictor_m2n2 u_predict1(
+.cpu_clk		(cpu_clk		),
+.cpu_rstn		(cpu_rstn		),
+.branch_ex		(branch_ex		),
+.branch_taken_ex	(branch_taken_ex	),
+.next_pc		(next_pc		),
+.branch_pc_ex		(branch_pc_ex		),
+.predictor		(predict1_rd_data	)
+);
 
+`else
 //predict1 - basic predictor
 wire [PR_ADDR_WIDTH - 1 : 0] predict1_raddr = next_pc[PR_ADDR_WIDTH + 1 : 2];
 wire [PR_ADDR_WIDTH - 1 : 0] predict1_waddr = branch_pc_ex[PR_ADDR_WIDTH + 1 : 2];
 wire predict1_wen = branch_ex;
 
-wire[1:0] predict1_rd_data;
 
 basic_predictor_2b #(.entry_num(ENTRY_NUM),.addr_width(PR_ADDR_WIDTH)) u_predict1 (
 .cpu_clk		(cpu_clk),
@@ -99,7 +111,9 @@ basic_predictor_2b #(.entry_num(ENTRY_NUM),.addr_width(PR_ADDR_WIDTH)) u_predict
 .branch_taken_ex 	(branch_taken_ex),
 .predictor_rd_data	(predict1_rd_data)
 );
+`endif
 
+//predict2 - loop predictor
 wire predict2_rd_data;
 loop_predictor u_predict2(
 .cpu_clk		(cpu_clk),
@@ -120,6 +134,7 @@ loop_predictor u_predict2(
 
 //predictor selector
 wire predictor;
+//assign predictor = predict1_rd_data[1];
 assign predictor = is_loop? predict2_rd_data : predict1_rd_data[1];
 
 //assign predict_taken = 1'b0;
