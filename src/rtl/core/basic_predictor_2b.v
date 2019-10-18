@@ -39,6 +39,8 @@ output reg[1:0] predictor_rd_data
 );
 
 reg[1:0] predictor[entry_num - 1 : 0];
+//test 
+wire[1:0] predictor_f5 = predictor[245];
 integer i;
 
 always @ (posedge cpu_clk or negedge cpu_rstn)
@@ -46,7 +48,7 @@ begin
 	if(!cpu_rstn)
 	begin
 		for(i=0; i<entry_num; i=i+1)
-		predictor[i] <= 2'b00;	
+		predictor[i] <= 2'b01;	
 	end
 	else
 	begin

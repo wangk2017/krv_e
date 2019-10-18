@@ -61,7 +61,6 @@ input wire blt_ex,					// branch when rs1<rs2
 input wire bge_ex,					// branch when rs1>=rs2
 input wire bltu_ex,					// branch when rs1<rs2, both treated as unsigned
 input wire bgeu_ex,					// branch when rs1>=rs2,both treated as unsigned
-output wire branch_ex,					// branch 
 output wire branch_taken_ex,				// branch condition met
 
 input wire load_ex, 	  				// load instruction
@@ -434,7 +433,6 @@ assign branch_bge_taken = bge_ex & (!com_result);
 assign branch_bltu_taken = bltu_ex & (ucom_result);
 assign branch_bgeu_taken = bgeu_ex & (!ucom_result);
 assign branch_taken_ex = branch_beq_taken | branch_bne_taken | branch_blt_taken | branch_bge_taken | branch_bltu_taken | branch_bgeu_taken;
-assign branch_ex = beq_ex | bne_ex | blt_ex | bge_ex | bltu_ex | bgeu_ex;
 
 wire ex_stall = (div_start && !div_done) 
 `ifdef KRV_HAS_DBG

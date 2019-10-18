@@ -54,6 +54,25 @@ wire [PR_ADDR_WIDTH - 1 : 0] bht_raddr = next_pc[PR_ADDR_WIDTH + 1 : 2];
 wire [PR_ADDR_WIDTH - 1 : 0] bht_waddr = branch_pc_ex[PR_ADDR_WIDTH + 1 : 2];
 wire [`ADDR_WIDTH - 1 : 0] bht_w_pc = branch_pc_ex;
 wire bht_wen = branch_ex;
+reg [255:0] bht_item_valid;
+reg bht_read_item_valid;
+
+always @ (posedge cpu_clk or negedge cpu_rstn)
+begin
+	if(!cpu_rstn)
+	begin
+		bht_item_valid <= {`ENTRY_NUM{1'b0}};	
+		bht_read_item_valid <= 1'b0;
+	end
+	else
+	begin
+		bht_read_item_valid <= bht_item_valid[bht_raddr];
+		if(bht_wen)
+		begin
+			bht_item_valid[bht_waddr] <= 1'b1;
+		end
+	end
+end
 
 `ifdef ASIC
 wire [`ADDR_WIDTH - 1 : 0] bht_r_pc;
@@ -70,7 +89,7 @@ sram_256x32 bht(
 reg[`ADDR_WIDTH - 1 : 0] bht [255:0];
 reg[`ADDR_WIDTH - 1 : 0] bht_r_pc;
 
-always @ (posedge cpu_clk)
+always @ (posedge cpu_clk or negedge cpu_rstn)
 begin
 	bht_r_pc <= bht[bht_raddr];
 	if(bht_wen)
@@ -80,7 +99,7 @@ begin
 end
 `endif
 
-wire hit = (pc == bht_r_pc);
+wire hit = bht_read_item_valid ? (pc == bht_r_pc) : 1'b0;
 
 wire[1:0] predict1_rd_data;
 `ifdef CORRELATING_PREDICTION

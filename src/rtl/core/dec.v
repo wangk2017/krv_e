@@ -77,7 +77,8 @@ output reg blt_ex,  						// blt at EX stage
 output reg bge_ex,  						// bge at EX stage
 output reg bltu_ex, 						// bltu at EX stage
 output reg bgeu_ex, 						// bgeu at EX stage
-input wire mis_predict,					// branch condition met at EX stage
+output reg branch_ex,						// branch at EX stage
+input wire mis_predict,						// branch mispredicted
 output reg load_ex, 						// propagate load to EX stage                   
 output reg store_ex, 						// propagate store to EX stage     
 output reg [`DATA_WIDTH - 1 : 0] store_data_ex,			// propagate store data to EX stage
@@ -686,6 +687,37 @@ begin
 
 end
 
+always @ (posedge cpu_clk or negedge cpu_rstn)
+begin
+	if(!cpu_rstn)
+	begin
+		branch_ex <= 1'b0;
+	end
+	else
+	begin
+		if (flush_dec)
+		begin
+			branch_ex <= 1'b0;
+		end
+		else if(ex_ready)
+		begin
+			if(dec_bubble)
+			begin
+				branch_ex <= 1'b0;
+			end
+			else
+			begin
+				branch_ex <= instruction_is_branch;
+			end
+		end
+		else
+		begin
+			branch_ex <= 1'b0;
+		end
+	end
+end
+
+
 //for rd
 wire use_rd;
 assign use_rd = R_type || I_type || U_type || J_type || mcsr_rd;
@@ -722,6 +754,7 @@ begin
 		mem_H_ex <= 1'b0;
 		mem_B_ex <= 1'b0;
 		mem_U_ex <= 1'b0;
+		branch_ex <= 1'b0;
 		predict_taken_ex <= 1'b0;
 		is_loop_ex <= 1'b0;
 		pc_ex <= 0;
@@ -737,6 +770,7 @@ begin
 			store_ex <= 1'b0;
 			load_ex <= 1'b0;
 			pre_instr_is_load <= 1'b0;
+			branch_ex <= 1'b0;
 			predict_taken_ex <= 1'b0;
 			is_loop_ex <= 1'b0;
 			mem_H_ex <= 1'b0;
@@ -765,6 +799,7 @@ begin
 				mem_H_ex <= (instruction_is_load || instruction_is_store) && (funct3_001 || funct3_101); 
 				mem_B_ex <= (instruction_is_load || instruction_is_store) && (funct3_000 || funct3_100); 
 				mem_U_ex <= (instruction_is_load || instruction_is_store) && (funct3_101 || funct3_100); 
+				branch_ex <= instruction_is_branch;
 				predict_taken_ex <= predict_taken_dec;
 				is_loop_ex <= is_loop_dec;
 				pc_ex <= pc_dec;
