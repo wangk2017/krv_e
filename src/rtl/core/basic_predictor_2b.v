@@ -35,10 +35,12 @@ input wire [addr_width - 1 : 0] predictor_waddr,
 input wire predictor_wen,
 input wire branch_taken_ex,
 
-output reg[1:0] predictor_rd_data
+output wire predictor_rd_data
 );
 
 reg[1:0] predictor[entry_num - 1 : 0];
+reg[1:0] predictor_rd_data_i;
+assign predictor_rd_data = predictor_rd_data_i[1];
 //test 
 wire[1:0] predictor_f5 = predictor[245];
 integer i;
@@ -52,7 +54,7 @@ begin
 	end
 	else
 	begin
-		predictor_rd_data <= predictor[predictor_raddr];	
+		predictor_rd_data_i <= predictor[predictor_raddr];	
 		if(predictor_wen)
 		begin
 			case(predictor[predictor_waddr])

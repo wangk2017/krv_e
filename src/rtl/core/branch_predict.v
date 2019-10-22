@@ -55,21 +55,27 @@ wire [PR_ADDR_WIDTH - 1 : 0] bht_waddr = branch_pc_ex[PR_ADDR_WIDTH + 1 : 2];
 wire [`ADDR_WIDTH - 1 : 0] bht_w_pc = branch_pc_ex;
 wire bht_wen = branch_ex;
 reg [255:0] bht_item_valid;
+reg [255:0] bht_item_is_loop;
 reg bht_read_item_valid;
+reg is_loop_rec;
 
 always @ (posedge cpu_clk or negedge cpu_rstn)
 begin
 	if(!cpu_rstn)
 	begin
 		bht_item_valid <= {`ENTRY_NUM{1'b0}};	
+		bht_item_is_loop <= {`ENTRY_NUM{1'b0}};
 		bht_read_item_valid <= 1'b0;
+		is_loop_rec <= 1'b0;
 	end
 	else
 	begin
 		bht_read_item_valid <= bht_item_valid[bht_raddr];
+		is_loop_rec <= bht_item_is_loop[bht_raddr];
 		if(bht_wen)
 		begin
 			bht_item_valid[bht_waddr] <= 1'b1;
+			bht_item_is_loop[bht_waddr] <= is_loop_ex;
 		end
 	end
 end
@@ -101,13 +107,14 @@ end
 
 wire hit = bht_read_item_valid ? (pc == bht_r_pc) : 1'b0;
 
-wire[1:0] predict1_rd_data;
+wire predict1_rd_data;
 `ifdef CORRELATING_PREDICTION
 //predict1 - 2-level 2-bit predictor
 predictor_m2n2 u_predict1(
 .cpu_clk		(cpu_clk		),
 .cpu_rstn		(cpu_rstn		),
 .branch_ex		(branch_ex		),
+.is_loop_ex		(is_loop_ex		),
 .branch_taken_ex	(branch_taken_ex	),
 .next_pc		(next_pc		),
 .branch_pc_ex		(branch_pc_ex		),
@@ -134,6 +141,7 @@ basic_predictor_2b #(.entry_num(ENTRY_NUM),.addr_width(PR_ADDR_WIDTH)) u_predict
 
 //predict2 - loop predictor
 wire predict2_rd_data;
+wire is_loop_det;
 loop_predictor u_predict2(
 .cpu_clk		(cpu_clk),
 .cpu_rstn		(cpu_rstn),
@@ -145,16 +153,32 @@ loop_predictor u_predict2(
 .is_loop_ex		(is_loop_ex),
 .src_data1_ex		(src_data1_ex),
 .src_data2_ex		(src_data2_ex),
-.is_loop		(is_loop),
+.is_loop		(is_loop_det),
 .loop_predict_taken	(predict2_rd_data)
 );
 
+//assign is_loop = is_loop_rec || is_loop_det;
+assign is_loop = is_loop_det;
 
+//predict3 - 10 record predictor
+wire [PR_ADDR_WIDTH - 1 : 0] predict3_raddr = next_pc[PR_ADDR_WIDTH + 1 : 2];
+wire [PR_ADDR_WIDTH - 1 : 0] predict3_waddr = branch_pc_ex[PR_ADDR_WIDTH + 1 : 2];
+wire predict3_wen = branch_ex;
+wire predict3_rd_data;
+predictor_10rec #(.entry_num(ENTRY_NUM),.addr_width(PR_ADDR_WIDTH)) u_predict3 (
+.cpu_clk		(cpu_clk),
+.cpu_rstn		(cpu_rstn),
+.predictor_raddr 	(predict3_raddr),
+.predictor_waddr 	(predict3_waddr),
+.predictor_wen	 	(predict3_wen),
+.branch_taken_ex 	(branch_taken_ex),
+.predictor_rd_data	(predict3_rd_data)
+);
 
 //predictor selector
 wire predictor;
 //assign predictor = predict1_rd_data[1];
-assign predictor = is_loop? predict2_rd_data : predict1_rd_data[1];
+assign predictor = is_loop_det? predict2_rd_data : predict3_rd_data;
 
 //assign predict_taken = 1'b0;
 assign predict_taken = hit && predictor;

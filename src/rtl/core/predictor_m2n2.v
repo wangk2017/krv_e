@@ -26,6 +26,7 @@ module predictor_m2n2(
 input     			cpu_clk,
 input     			cpu_rstn,
 input      			branch_ex,
+input      			is_loop_ex,
 input     			branch_taken_ex,
 input [`ADDR_WIDTH - 1 : 0] 	next_pc,
 input [`ADDR_WIDTH - 1 : 0] 	branch_pc_ex,
@@ -35,7 +36,7 @@ output [1:0]			predictor
 parameter ENTRY_NUM = 256;
 parameter PR_ADDR_WIDTH = $clog2(ENTRY_NUM);
 
-
+wire no_loop_branch_ex = branch_ex && !is_loop_ex;
 //level 1
 reg [1 :0] global_history;
 always @ (posedge cpu_clk or negedge cpu_rstn)
@@ -46,7 +47,7 @@ begin
 	end
 	else 
 	begin
-		if(branch_ex)
+		if(no_loop_branch_ex)
 		begin
 			global_history <= {global_history[0],branch_taken_ex};
 		end
@@ -62,7 +63,7 @@ wire select_bank3 = (&global_history);
 wire [PR_ADDR_WIDTH - 1 : 0] predictor_raddr = next_pc[PR_ADDR_WIDTH + 1 : 2];
 wire [PR_ADDR_WIDTH - 1 : 0] predictor_waddr = branch_pc_ex[PR_ADDR_WIDTH + 1 : 2];
 
-wire predictor_bank0_wen = branch_ex && select_bank0;
+wire predictor_bank0_wen = no_loop_branch_ex && select_bank0;
 wire[1:0] predictor_bank0_rd_data;
 
 basic_predictor_2b #(.entry_num(ENTRY_NUM),.addr_width(PR_ADDR_WIDTH)) u_predictor_bank0 (
@@ -76,7 +77,7 @@ basic_predictor_2b #(.entry_num(ENTRY_NUM),.addr_width(PR_ADDR_WIDTH)) u_predict
 );
 
 
-wire predictor_bank1_wen = branch_ex && select_bank1;
+wire predictor_bank1_wen = no_loop_branch_ex && select_bank1;
 wire[1:0] predictor_bank1_rd_data;
 
 basic_predictor_2b #(.entry_num(ENTRY_NUM),.addr_width(PR_ADDR_WIDTH)) u_predictor_bank1 (
@@ -90,7 +91,7 @@ basic_predictor_2b #(.entry_num(ENTRY_NUM),.addr_width(PR_ADDR_WIDTH)) u_predict
 );
 
 
-wire predictor_bank2_wen = branch_ex && select_bank2;
+wire predictor_bank2_wen = no_loop_branch_ex && select_bank2;
 wire[1:0] predictor_bank2_rd_data;
 
 basic_predictor_2b #(.entry_num(ENTRY_NUM),.addr_width(PR_ADDR_WIDTH)) u_predictor_bank2 (
@@ -104,7 +105,7 @@ basic_predictor_2b #(.entry_num(ENTRY_NUM),.addr_width(PR_ADDR_WIDTH)) u_predict
 );
 
 
-wire predictor_bank3_wen = branch_ex && select_bank3;
+wire predictor_bank3_wen = no_loop_branch_ex && select_bank3;
 wire[1:0] predictor_bank3_rd_data;
 
 basic_predictor_2b #(.entry_num(ENTRY_NUM),.addr_width(PR_ADDR_WIDTH)) u_predictor_bank3 (
