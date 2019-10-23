@@ -37,6 +37,8 @@ input wire jal_dec, 					// jal
 input wire jalr_ex, 					// jalr
 input wire fence_dec,					// fence
 output reg predict_taken_dec,				// propagate predict taken to DEC stage
+output reg predict1_taken_dec,				// propagate predict taken to DEC stage
+output reg predict3_taken_dec,				// propagate predict taken to DEC stage
 output reg is_loop_dec,					// propagate loop detection to DEC stage
 output reg [`ADDR_WIDTH - 1 : 0] pc_dec,		// Program counter at DEC stage
 output reg [`ADDR_WIDTH - 1 : 0] pc_plus4_dec,		// Program counter plus 4 at DEC stage
@@ -49,6 +51,8 @@ input wire signed [`DATA_WIDTH - 1 : 0] imm_ex,		// immediate at ex stage
 input wire signed [`DATA_WIDTH - 1 : 0] imm_dec,	// immediate at dec stage
 input wire is_loop_ex,					// loop dectection at EX stage
 input wire predict_taken_ex,				// predict taken at EX stage
+input wire predict1_taken_ex,				// predict taken at EX stage
+input wire predict3_taken_ex,				// predict taken at EX stage
 input wire [`ADDR_WIDTH - 1 : 0] pc_ex,			// Program counter value at EX stage
 input wire [`ADDR_WIDTH - 1 : 0] pc_plus4_ex,		// Program counter plus 4 at DEC stage
 output wire mis_predict,				// mis predict of branch
@@ -233,6 +237,8 @@ begin
 		pc_plus4_dec <= boot_addr;
 		if_valid <= 1'b0;
 		predict_taken_dec <= 1'b0;
+		predict1_taken_dec <= 1'b0;
+		predict3_taken_dec <= 1'b0;
 		is_loop_dec <= 1'b0;
 	end
 	else
@@ -242,6 +248,8 @@ begin
 			instr_dec <= {`INSTR_WIDTH{1'b0}};
 			if_valid <= 1'b0;
 			predict_taken_dec <= 1'b0;
+			predict1_taken_dec <= 1'b0;
+			predict3_taken_dec <= 1'b0;
 			is_loop_dec <= 1'b0;
 		end
 		else if(dec_ready)
@@ -251,6 +259,8 @@ begin
 			begin
 				instr_dec <= {`INSTR_WIDTH{1'b0}};
 				predict_taken_dec <= 1'b0;
+				predict1_taken_dec <= 1'b0;
+				predict3_taken_dec <= 1'b0;
 				is_loop_dec <= 1'b0;
 			end
 			else
@@ -259,6 +269,8 @@ begin
 				pc_dec <= pc;
 				pc_plus4_dec <= pc_plus4;
 				predict_taken_dec <= predict_taken;
+				predict1_taken_dec <= predict1_taken;
+				predict3_taken_dec <= predict3_taken;
 				is_loop_dec <= is_loop;
 			end
 		end
@@ -312,8 +324,12 @@ branch_predict u_branch_predict(
 .next_pc		(next_pc		),
 .pc			(pc			),
 .predict_taken		(predict_taken		),
+.predict1_taken		(predict1_taken		),
+.predict3_taken		(predict3_taken		),
 .is_loop		(is_loop		),
 .predict_target_pc	(predict_target_pc	),
+.predict1_taken_ex	(predict1_taken_ex	),
+.predict3_taken_ex	(predict3_taken_ex	),
 .is_loop_ex		(is_loop_ex		),
 .branch_ex		(branch_ex		),
 .jal_dec		(jal_dec		),

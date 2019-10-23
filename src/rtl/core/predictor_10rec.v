@@ -35,35 +35,55 @@ input wire [addr_width - 1 : 0] predictor_waddr,
 input wire predictor_wen,
 input wire branch_taken_ex,
 
+output reg rec_10_entry_valid,
 output wire predictor_rd_data
 );
 
 reg[3:0] rec_cnt[entry_num - 1 : 0];
+reg entry_valid[entry_num - 1 : 0];
+
 integer j;
 
 always @ (posedge cpu_clk or negedge cpu_rstn)
 begin
-	if(!cpu_rstn)
+	for(j=0; j<entry_num; j=j+1)
 	begin
-		for(j=0; j<entry_num; j=j+1)
-		rec_cnt[j] <= 4'h0;
-	end
-	else
-	begin
-		for(j=0; j<entry_num; j=j+1)
+		if(!cpu_rstn)
 		begin
-			if(rec_cnt[j] == 4'ha)
+			entry_valid[j] <= 1'b0;
+		end
+		else
+		begin
+			if(rec_cnt[j] == 4'h9)
 			begin
-				rec_cnt[j] <= 4'ha;
-			end
-			else if(predictor_wen && (predictor_waddr == j))
-			begin
-				rec_cnt[j] <= rec_cnt[j] + 4'h1;
+				entry_valid[j] <= 1'b1;
 			end
 		end
 	end
 end
 
+reg [3:0] select_rec;
+integer k;
+always @ (posedge cpu_clk or negedge cpu_rstn)
+begin
+	if(!cpu_rstn)
+	begin
+		select_rec <= 4'h0;
+		for(k=0; k<entry_num; k=k+1)
+		rec_cnt[k] <= 4'h0;
+	end
+	else
+	begin
+		select_rec <= rec_cnt[predictor_raddr];
+		if(predictor_wen)
+		begin
+			if(rec_cnt[predictor_waddr] == 4'h9)
+			rec_cnt[predictor_waddr] <= 4'h0;
+			else
+			rec_cnt[predictor_waddr] <= rec_cnt[predictor_waddr] + 4'h1;
+		end
+	end
+end
 
 reg[9:0] rec_10_rd_data;
 reg[9:0] rec_10[entry_num - 1 : 0];
@@ -71,49 +91,25 @@ reg[9:0] rec_10[entry_num - 1 : 0];
 integer i;
 
 wire [9:0] rec_10_wloc_rec = rec_10[predictor_waddr];
+wire [3:0] wr_rec = rec_cnt[predictor_waddr];
 
 always @ (posedge cpu_clk or negedge cpu_rstn)
 begin
 	if(!cpu_rstn)
 	begin
+		rec_10_rd_data <= 10'h0;
+		rec_10_entry_valid <= 1'b0;
 		for(i=0; i<entry_num; i=i+1)
 		rec_10[i] <= 10'h0;	
 	end
 	else
 	begin
+		rec_10_entry_valid <= entry_valid[predictor_raddr];
 		rec_10_rd_data <= rec_10[predictor_raddr];	
-		if(predictor_wen && (rec_cnt[predictor_waddr] != 4'ha))
+		if(predictor_wen)
 		begin
-			rec_10[predictor_waddr] <= {rec_10_wloc_rec[8:0],branch_taken_ex};
+			rec_10[predictor_waddr][wr_rec] <= branch_taken_ex;
 			
-		end
-	end
-end
-
-integer k;
-reg[3:0] rec_use_cnt[entry_num-1];
-reg [3:0] select_rec;
-always @ (posedge cpu_clk or negedge cpu_rstn)
-begin
-	if(!cpu_rstn)
-	begin
-		select_rec <= 4'h0;
-		for(k=0; k<entry_num; k=k+1)
-		rec_use_cnt[k] <= 4'h0;
-	end
-	else
-	begin
-		if(rec_cnt[predictor_raddr] == 4'ha)
-			select_rec <= rec_use_cnt[predictor_raddr];
-		if(rec_cnt[predictor_waddr] == 4'ha)
-		begin
-			if(predictor_wen)
-			begin
-				if(rec_use_cnt[predictor_waddr] == 4'ha)
-				rec_use_cnt[predictor_waddr] <= 4'h0;
-				else
-				rec_use_cnt[predictor_waddr] <= rec_use_cnt[predictor_waddr] + 4'h1;
-			end
 		end
 	end
 end

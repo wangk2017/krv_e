@@ -35,7 +35,9 @@ input wire cpu_rstn,						// cpu reset, active low
 input wire if_valid,						// indication of IF stage data valid
 output wire dec_ready,						// indication of DEC stage is ready
 input wire predict_taken_dec,					// predict_taken at DEC stage
-input wire is_loop_dec,					// predict_taken at DEC stage
+input wire predict1_taken_dec,					// predict_taken at DEC stage
+input wire predict3_taken_dec,					// predict_taken at DEC stage
+input wire is_loop_dec,						// is_loop at DEC stage
 input wire [`INSTR_WIDTH - 1 : 0] instr_dec,			// instruction at dec stage
 input wire [`ADDR_WIDTH - 1 : 0] pc_dec,			// pc propagated from IF stage
 input wire [`ADDR_WIDTH - 1 : 0] pc_plus4_dec,			// pc plus4 propagated from IF stage
@@ -87,6 +89,8 @@ output reg mem_B_ex,						// propagate byte accessto EX stage
 output reg mem_U_ex,						// propagate unsigned load to EX stage
 output reg [`RD_WIDTH:0] rd_ex, 				// propagate rd to EX stage
 output reg predict_taken_ex,
+output reg predict1_taken_ex,
+output reg predict3_taken_ex,
 output reg is_loop_ex,
 output reg [`ADDR_WIDTH - 1 : 0] pc_ex,				// propagate pc to EX stage
 output reg [`ADDR_WIDTH - 1 : 0] pc_plus4_ex,			// propagate pc to EX stage
@@ -756,6 +760,8 @@ begin
 		mem_U_ex <= 1'b0;
 		branch_ex <= 1'b0;
 		predict_taken_ex <= 1'b0;
+		predict1_taken_ex <= 1'b0;
+		predict3_taken_ex <= 1'b0;
 		is_loop_ex <= 1'b0;
 		pc_ex <= 0;
 		pc_plus4_ex <= 0;
@@ -772,6 +778,8 @@ begin
 			pre_instr_is_load <= 1'b0;
 			branch_ex <= 1'b0;
 			predict_taken_ex <= 1'b0;
+			predict1_taken_ex <= 1'b0;
+			predict3_taken_ex <= 1'b0;
 			is_loop_ex <= 1'b0;
 			mem_H_ex <= 1'b0;
 			mem_B_ex <= 1'b0;
@@ -801,6 +809,8 @@ begin
 				mem_U_ex <= (instruction_is_load || instruction_is_store) && (funct3_101 || funct3_100); 
 				branch_ex <= instruction_is_branch;
 				predict_taken_ex <= predict_taken_dec;
+				predict1_taken_ex <= predict1_taken_dec;
+				predict3_taken_ex <= predict3_taken_dec;
 				is_loop_ex <= is_loop_dec;
 				pc_ex <= pc_dec;
 				pc_plus4_ex <= pc_plus4_dec;

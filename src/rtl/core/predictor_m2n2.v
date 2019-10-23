@@ -64,7 +64,7 @@ wire [PR_ADDR_WIDTH - 1 : 0] predictor_raddr = next_pc[PR_ADDR_WIDTH + 1 : 2];
 wire [PR_ADDR_WIDTH - 1 : 0] predictor_waddr = branch_pc_ex[PR_ADDR_WIDTH + 1 : 2];
 
 wire predictor_bank0_wen = no_loop_branch_ex && select_bank0;
-wire[1:0] predictor_bank0_rd_data;
+wire predictor_bank0_rd_data;
 
 basic_predictor_2b #(.entry_num(ENTRY_NUM),.addr_width(PR_ADDR_WIDTH)) u_predictor_bank0 (
 .cpu_clk		(cpu_clk),
@@ -78,7 +78,7 @@ basic_predictor_2b #(.entry_num(ENTRY_NUM),.addr_width(PR_ADDR_WIDTH)) u_predict
 
 
 wire predictor_bank1_wen = no_loop_branch_ex && select_bank1;
-wire[1:0] predictor_bank1_rd_data;
+wire predictor_bank1_rd_data;
 
 basic_predictor_2b #(.entry_num(ENTRY_NUM),.addr_width(PR_ADDR_WIDTH)) u_predictor_bank1 (
 .cpu_clk		(cpu_clk),
@@ -92,7 +92,7 @@ basic_predictor_2b #(.entry_num(ENTRY_NUM),.addr_width(PR_ADDR_WIDTH)) u_predict
 
 
 wire predictor_bank2_wen = no_loop_branch_ex && select_bank2;
-wire[1:0] predictor_bank2_rd_data;
+wire predictor_bank2_rd_data;
 
 basic_predictor_2b #(.entry_num(ENTRY_NUM),.addr_width(PR_ADDR_WIDTH)) u_predictor_bank2 (
 .cpu_clk		(cpu_clk),
@@ -106,7 +106,7 @@ basic_predictor_2b #(.entry_num(ENTRY_NUM),.addr_width(PR_ADDR_WIDTH)) u_predict
 
 
 wire predictor_bank3_wen = no_loop_branch_ex && select_bank3;
-wire[1:0] predictor_bank3_rd_data;
+wire predictor_bank3_rd_data;
 
 basic_predictor_2b #(.entry_num(ENTRY_NUM),.addr_width(PR_ADDR_WIDTH)) u_predictor_bank3 (
 .cpu_clk		(cpu_clk),
@@ -118,10 +118,10 @@ basic_predictor_2b #(.entry_num(ENTRY_NUM),.addr_width(PR_ADDR_WIDTH)) u_predict
 .predictor_rd_data	(predictor_bank3_rd_data)
 );
 
-assign predictor =  ({2{select_bank0}} & predictor_bank0_rd_data) |
-			({2{select_bank1}} & predictor_bank1_rd_data) |
-			({2{select_bank2}} & predictor_bank2_rd_data) |
-			({2{select_bank3}} & predictor_bank3_rd_data) ;
+assign predictor =  	(select_bank0 & predictor_bank0_rd_data) |
+			(select_bank1 & predictor_bank1_rd_data) |
+			(select_bank2 & predictor_bank2_rd_data) |
+			(select_bank3 & predictor_bank3_rd_data) ;
 	
 
 

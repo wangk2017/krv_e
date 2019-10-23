@@ -108,6 +108,10 @@ wire 					jalr_ex;
 wire 					fence_dec;
 wire 					predict_taken_dec;
 wire 					predict_taken_ex;
+wire 					predict1_taken_dec;
+wire 					predict1_taken_ex;
+wire 					predict3_taken_dec;
+wire 					predict3_taken_ex;
 wire 					is_loop_dec;
 wire 					is_loop_ex;
 wire [`ADDR_WIDTH - 1 : 0] 		pc_dec;
@@ -306,6 +310,8 @@ fetch u_fetch(
 .instr_read_data	(instr_read_data),
 .instr_read_data_valid	(instr_read_data_valid),	
 .predict_taken_dec	(predict_taken_dec),
+.predict1_taken_dec	(predict1_taken_dec),
+.predict3_taken_dec	(predict3_taken_dec),
 .is_loop_dec		(is_loop_dec),
 .pc_dec			(pc_dec),
 .pc_plus4_dec		(pc_plus4_dec),
@@ -319,6 +325,8 @@ fetch u_fetch(
 .pc_ex			(pc_ex),
 .pc_plus4_ex		(pc_plus4_ex),
 .predict_taken_ex	(predict_taken_ex),
+.predict1_taken_ex	(predict1_taken_ex),
+.predict3_taken_ex	(predict3_taken_ex),
 .is_loop_ex		(is_loop_ex),
 .branch_taken_ex	(branch_taken_ex),
 .branch_ex		(branch_ex),
@@ -355,6 +363,8 @@ dec u_dec (
 .dec_ready		(dec_ready),		
 .instr_dec		(instr_dec ),
 .predict_taken_dec	(predict_taken_dec),
+.predict1_taken_dec	(predict1_taken_dec),
+.predict3_taken_dec	(predict3_taken_dec),
 .is_loop_dec		(is_loop_dec),
 .pc_dec			(pc_dec),
 .pc_plus4_dec		(pc_plus4_dec),
@@ -400,6 +410,8 @@ dec u_dec (
 .store_data_ex		(store_data_ex),
 .branch_ex		(branch_ex),
 .predict_taken_ex	(predict_taken_ex),
+.predict1_taken_ex	(predict1_taken_ex),
+.predict3_taken_ex	(predict3_taken_ex),
 .is_loop_ex		(is_loop_ex),
 .pc_ex			(pc_ex),
 .pc_plus4_ex		(pc_plus4_ex),
