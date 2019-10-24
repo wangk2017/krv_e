@@ -40,6 +40,7 @@ wire same_dec_pc = (dec_pc == dec_pc_d1);
 wire recnt_branch = branch && branch_d1 && same_dec_pc;
 wire recnt_mis_predict = mis_predict && mis_predict_d1  && same_dec_pc;
 
+integer i;
 //print performance result to file
 initial 
 begin
@@ -74,5 +75,12 @@ begin
 		$fwrite(fp_z, "store_stall cycle number is %d due to store", store_stall);
 		$fwrite(fp_z, "                                         \n");
 		$fwrite(fp_z, "=========================================\n");
+		for (i=0; i<256; i=i+1)
+		begin
+		$fwrite(fp_z, "predict1_credit[%d] = %d", i, DUT.u_core.u_fetch.u_branch_predict.predict1_credit[i]);
+		$fwrite(fp_z, "=========================================\n");
+		$fwrite(fp_z, "predict3_credit[%d] = %d", i, DUT.u_core.u_fetch.u_branch_predict.predict3_credit[i]);
+		$fwrite(fp_z, "=========================================\n");
+		end
 	end
 end

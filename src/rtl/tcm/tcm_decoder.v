@@ -88,7 +88,7 @@ wire [3:0] 			ip_byte_strobe;
 wire 				valid_reg_write;
 wire 				valid_reg_read;
 
-axi_slave axi_slave_uart(
+axi_slave axi_slave_tcm(
 .ACLK			(ACLK			),						
 .ARESETn		(ARESETn		),						
 .AWVALID		(AWVALID		),	
@@ -148,6 +148,7 @@ wire dtcm_wr_range = 1'b0;
 wire dtcm_rd_range = 1'b0;
 `endif
 
+/*
 reg AXI_dtcm_access_r;
 reg AXI_itcm_access_r;
 
@@ -164,9 +165,10 @@ begin
 		AXI_itcm_access_r <= AXI_itcm_access;
 	end
 end
+*/
 
-assign ip_read_data = AXI_dtcm_access_r ? AXI_dtcm_read_data : (AXI_itcm_access_r ? AXI_itcm_read_data : RDATA_flash);
-assign ip_read_data_valid = (AXI_dtcm_access || AXI_dtcm_access_r ) ? AXI_dtcm_read_data_valid : ((AXI_itcm_access || AXI_itcm_access_r)? AXI_itcm_read_data_valid : RVALID_flash);
+assign ip_read_data = AXI_dtcm_access ? AXI_dtcm_read_data : (AXI_itcm_access ? AXI_itcm_read_data : RDATA_flash);
+assign ip_read_data_valid = (AXI_dtcm_access /*|| AXI_dtcm_access_r */) ? AXI_dtcm_read_data_valid : ((AXI_itcm_access /*|| AXI_itcm_access_r*/)? AXI_itcm_read_data_valid : RVALID_flash);
 
 assign AWVALID_flash = AWVALID && (!(itcm_wr_range || dtcm_wr_range));
 assign WVALID_flash = WVALID && (!(itcm_wr_range || dtcm_wr_range));

@@ -108,6 +108,22 @@ begin
 end
 
 reg [`DATA_WIDTH - 1 : 0] dtcm_rdata;
+
+//n-type sram
+always @ *
+begin
+		dtcm_rdata = dtcm[dtcm_word_addr];
+end
+`endif
+
+always @ *
+begin
+		data_dtcm_rdata_valid = data_dtcm_access & (!data_dtcm_rd0_wr1);
+		AXI_dtcm_rdata_valid = AXI_dtcm_access && !data_dtcm_access;
+		dma_dtcm_rdata_valid = dma_dtcm_access & (!dma_dtcm_rd0_wr1);
+end
+/*
+//p-type sram
 always @ (posedge clk or negedge rstn)
 begin
 	if(!rstn)
@@ -158,6 +174,7 @@ begin
 	end
 end
 
+*/
 
 
 assign data_dtcm_rdata = dtcm_rdata;

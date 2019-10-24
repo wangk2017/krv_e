@@ -992,8 +992,8 @@ wire [5:0] hazard_rd = load_hazard_2nd ? hazard_rd_2nd : hazard_rd_1st;
 reg [5:0] hazard_rd_1st_r;
 reg [5:0] hazard_rd_2nd_r;
 
-wire load_hazard_1st_clr = mem_wb_data_valid && (rd_mem == hazard_rd_1st_r);
-wire load_hazard_2nd_clr = mem_wb_data_valid && (rd_mem == hazard_rd_2nd_r);
+wire load_hazard_1st_clr = mem_wb_data_valid && ((rd_mem == hazard_rd_1st_r) || (rd_mem == hazard_rd_1st));
+wire load_hazard_2nd_clr = mem_wb_data_valid && ((rd_mem == hazard_rd_2nd_r) || (rd_mem == hazard_rd_2nd));
 
 assign load_hazard_1st =(((rs1_wait_load_1st || rs2_wait_load_1st )) ) && (!mret) && !load_hazard_1st_r && !load_hazard_1st_clr;
 assign load_hazard_2nd =(((rs1_wait_load_2nd || rs2_wait_load_2nd )) ) && (!mret) && !load_hazard_2nd_r && !load_hazard_1st_r && !load_hazard_2nd_clr && !load_hazard_1st_clr;
@@ -1004,7 +1004,7 @@ wire load_hazard_stall_1st = (load_hazard_1st || load_hazard_1st_r) && (!load_ha
 wire load_hazard_stall_2nd = (load_hazard_2nd || load_hazard_2nd_r) && (!load_hazard_2nd_clr);
 
 wire load_hazard_stall;
-assign load_hazard_stall = load_hazard_stall_1st || load_hazard_stall_2nd;  
+assign load_hazard_stall = load_hazard_stall_1st;// || load_hazard_stall_2nd;  
 
 
 always@(posedge cpu_clk or negedge cpu_rstn)

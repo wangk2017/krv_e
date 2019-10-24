@@ -271,8 +271,24 @@ begin
 	end
 end
 
-reg itcm_read_data_valid;
+wire AXI_wr_same_loc_as_ir = AXI_itcm_wr && (itcm_word_addr_wr == instr_itcm_word_addr_rd);
 
+//n-type sram
+always @ *
+begin
+		instr_itcm_read_data = itcm[instr_itcm_word_addr_rd];
+		AXI_itcm_read_data = itcm[AXI_itcm_word_addr_rd];
+end
+`endif
+
+always @ *
+begin
+		instr_itcm_read_data_valid = instr_itcm_access && (~AXI_wr_same_loc_as_ir) && (~itcm_auto_load);
+		AXI_itcm_read_data_valid = AXI_itcm_access && (~AXI_tcm_rd0_wr1) && (~itcm_auto_load);
+end
+
+/*
+//p-type sram
 always @ (posedge clk or negedge rstn)
 begin
 	if(!rstn)
@@ -291,7 +307,6 @@ begin
 end
 `endif
 
-wire AXI_wr_same_loc_as_ir = AXI_itcm_wr && (itcm_word_addr_wr == instr_itcm_word_addr_rd);
 
 always @ (posedge clk or negedge rstn)
 begin
@@ -316,6 +331,7 @@ begin
 		AXI_itcm_read_data_valid <= AXI_itcm_access && (~AXI_tcm_rd0_wr1) && (~itcm_auto_load);
 	end
 end
+*/
 
 ////////////////assign data_itcm_ready = ~itcm_auto_load;
 

@@ -29,8 +29,8 @@ input wire cpu_clk,					//cpu clock
 input wire cpu_rstn,					//cpu reset, active low
 
 //interface with fetch
-input wire [`ADDR_WIDTH - 1 : 0] next_pc,			//next_pc
-input wire [`ADDR_WIDTH - 1 : 0] pc,				//pc
+input wire [`ADDR_WIDTH - 1 : 0] next_pc,		//next_pc
+input wire [`ADDR_WIDTH - 1 : 0] pc,			//pc
 output wire [`INSTR_WIDTH - 1 : 0] instr_read_data,  	//instruction
 output wire instr_read_data_valid,			//instruction valid
 
@@ -57,7 +57,7 @@ input wire IAXI_read_data_valid				//IAXI read data valid
 wire addr_itcm;
 //wire addr_dtcm;
 `ifdef KRV_HAS_ITCM
-assign addr_itcm =(next_pc >= `ITCM_START_ADDR) && (next_pc < `ITCM_START_ADDR + `ITCM_SIZE);
+assign addr_itcm =(pc >= `ITCM_START_ADDR) && (pc < `ITCM_START_ADDR + `ITCM_SIZE);
 `else
 assign addr_itcm = 1'b0;
 `endif
@@ -86,7 +86,7 @@ end
 //Drive interface
 //---------------------------------------------//
 assign instr_itcm_access = addr_itcm;
-assign instr_itcm_addr = next_pc;
+assign instr_itcm_addr = pc;
 
 assign IAXI_access = addr_AXI_r;
 assign IAXI_addr = pc;

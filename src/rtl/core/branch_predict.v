@@ -113,9 +113,9 @@ begin
 	begin
 		if(bht_wen)
 		begin
-			if(predict1_score && (!predict1_credit_full))
+			if(predict1_score && (!predict1_credit_full) && (!is_loop_ex))
 			predict1_credit[bht_waddr] <= predict1_credit[bht_waddr] + 16'h1;
-			if(predict3_score && (!predict3_credit_full))
+			if(predict3_score && (!predict3_credit_full) && (!is_loop_ex))
 			predict3_credit[bht_waddr] <= predict3_credit[bht_waddr] + 16'h1;
 		end
 	end

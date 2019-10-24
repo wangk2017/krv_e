@@ -231,9 +231,9 @@ wire [`DATA_WIDTH - 1 : 0] mem_read_data;
 assign mem_read_data = data_dtcm_read_data_valid ? data_dtcm_read_data : (DAXI_read_data_valid ? DAXI_read_data : (/*data_itcm_read_data_valid ? data_itcm_read_data :*/ {`DATA_WIDTH{1'b0}}));
 
 wire load_data_sign_bit;
-assign load_data_sign_bit = mem_byte_strobe_r[3]? mem_read_data[31] : 
-			   (mem_byte_strobe_r[2]? mem_read_data[23] : 
-			   (mem_byte_strobe_r[1]? mem_read_data[15] :
+assign load_data_sign_bit = mem_byte_strobe[3]? mem_read_data[31] : 
+			   (mem_byte_strobe[2]? mem_read_data[23] : 
+			   (mem_byte_strobe[1]? mem_read_data[15] :
 			    			mem_read_data[7]));
 
 //generate read data for load
@@ -245,7 +245,7 @@ reg [`DATA_WIDTH - 1 : 0] mem_wb_data_for_lhu;
 
 always @ *
 begin
-	case(mem_byte_strobe_r)
+	case(mem_byte_strobe)
 		4'b0001: mem_wb_data_for_lb = {{24{load_data_sign_bit}}, mem_read_data[7:0]};
 		4'b0010: mem_wb_data_for_lb = {{24{load_data_sign_bit}}, mem_read_data[15:8]};
 		4'b0100: mem_wb_data_for_lb = {{24{load_data_sign_bit}}, mem_read_data[23:16]};
@@ -256,7 +256,7 @@ end
 
 always @ *
 begin
-	case(mem_byte_strobe_r)
+	case(mem_byte_strobe)
 		4'b0001: mem_wb_data_for_lbu = {{24{1'b0}}, mem_read_data[7:0]};
 		4'b0010: mem_wb_data_for_lbu = {{24{1'b0}}, mem_read_data[15:8]};
 		4'b0100: mem_wb_data_for_lbu = {{24{1'b0}}, mem_read_data[23:16]};
@@ -267,7 +267,7 @@ end
 
 always @ *
 begin
-	case(mem_byte_strobe_r)
+	case(mem_byte_strobe)
 		4'b0011: mem_wb_data_for_lh = {{16{load_data_sign_bit}}, mem_read_data[15:0]};
 		4'b1100: mem_wb_data_for_lh = {{16{load_data_sign_bit}}, mem_read_data[31:16]};
 		default: mem_wb_data_for_lh = {`DATA_WIDTH{1'b0}};
@@ -276,7 +276,7 @@ end
 
 always @ *
 begin
-	case(mem_byte_strobe_r)
+	case(mem_byte_strobe)
 		4'b0011: mem_wb_data_for_lhu = {{16{1'b0}}, mem_read_data[15:0]};
 		4'b1100: mem_wb_data_for_lhu = {{16{1'b0}}, mem_read_data[31:16]};
 		default: mem_wb_data_for_lhu = {`DATA_WIDTH{1'b0}};
@@ -286,9 +286,9 @@ end
 
 always @ *
 begin
-	if (mem_U_mem_r)
+	if (mem_U_mem)
 	begin
-		case ({mem_H_mem_r,mem_B_mem_r})
+		case ({mem_H_mem,mem_B_mem})
 		2'b00: mem_wb_data = mem_read_data;		 //for word access
 		2'b01: mem_wb_data = mem_wb_data_for_lbu;	 //for byte access
 		2'b10: mem_wb_data = mem_wb_data_for_lhu;	 //for half-word access
@@ -297,7 +297,7 @@ begin
 	end
 	else
 	begin
-		case ({mem_H_mem_r,mem_B_mem_r})
+		case ({mem_H_mem,mem_B_mem})
 		2'b00: mem_wb_data = mem_read_data;		 //for word access
 		2'b01: mem_wb_data = mem_wb_data_for_lb;	 //for byte access
 		2'b10: mem_wb_data = mem_wb_data_for_lh;	 //for half-word access
@@ -307,7 +307,7 @@ begin
 
 end
 
-assign mem_wb_data_valid = (addr_dtcm_r && data_dtcm_read_data_valid) | (addr_AXI_r && DAXI_read_data_valid)/* | (addr_itcm_r &&  data_itcm_read_data_valid)*/;
+assign mem_wb_data_valid = (addr_dtcm && data_dtcm_read_data_valid) | (addr_AXI_r && DAXI_read_data_valid)/* | (addr_itcm_r &&  data_itcm_read_data_valid)*/;
 
  
 //--------------------------------------------//
