@@ -104,6 +104,8 @@ assign dbg_read_data_valid = dbg_gprs_read_data_valid | dbg_csrs_read_data_valid
 `endif
 
 wire 					jal_dec;
+wire 					jalr_dec;
+wire [`RD_WIDTH - 1 : 0] 		rd_dec;
 wire 					jalr_ex;
 wire 					fence_dec;
 wire 					predict_taken_dec;
@@ -114,6 +116,8 @@ wire 					predict3_taken_dec;
 wire 					predict3_taken_ex;
 wire 					is_loop_dec;
 wire 					is_loop_ex;
+wire 					peek_ret_dec;
+wire 					peek_ret_ex;
 wire [`ADDR_WIDTH - 1 : 0] 		pc_dec;
 wire [`ADDR_WIDTH - 1 : 0] 		pc_plus4_dec;
 
@@ -313,12 +317,15 @@ fetch u_fetch(
 .predict1_taken_dec	(predict1_taken_dec),
 .predict3_taken_dec	(predict3_taken_dec),
 .is_loop_dec		(is_loop_dec),
+.peek_ret_dec		(peek_ret_dec),
 .pc_dec			(pc_dec),
 .pc_plus4_dec		(pc_plus4_dec),
 .if_valid		(if_valid ),		
 .dec_ready		(dec_ready),		
 .instr_dec		(instr_dec ),	
 .jal_dec		(jal_dec), 
+.jalr_dec		(jalr_dec), 
+.rd_dec			(rd_dec), 
 .jalr_ex		(jalr_ex), 
 .fence_dec		(fence_dec),
 .mis_predict		(mis_predict),
@@ -328,6 +335,7 @@ fetch u_fetch(
 .predict1_taken_ex	(predict1_taken_ex),
 .predict3_taken_ex	(predict3_taken_ex),
 .is_loop_ex		(is_loop_ex),
+.peek_ret_ex		(peek_ret_ex),
 .branch_taken_ex	(branch_taken_ex),
 .branch_ex		(branch_ex),
 .src_data1_ex		(src_data1_ex ),
@@ -366,9 +374,12 @@ dec u_dec (
 .predict1_taken_dec	(predict1_taken_dec),
 .predict3_taken_dec	(predict3_taken_dec),
 .is_loop_dec		(is_loop_dec),
+.peek_ret_dec		(peek_ret_dec),
 .pc_dec			(pc_dec),
 .pc_plus4_dec		(pc_plus4_dec),
 .jal_dec		(jal_dec), 
+.jalr_dec		(jalr_dec), 
+.rd_dec			(rd_dec), 
 .jalr_ex		(jalr_ex), 
 .fence_dec		(fence_dec),
 .dec_valid		(dec_valid ),		
@@ -413,6 +424,7 @@ dec u_dec (
 .predict1_taken_ex	(predict1_taken_ex),
 .predict3_taken_ex	(predict3_taken_ex),
 .is_loop_ex		(is_loop_ex),
+.peek_ret_ex		(peek_ret_ex),
 .pc_ex			(pc_ex),
 .pc_plus4_ex		(pc_plus4_ex),
 .rd_ex			(rd_ex ), 

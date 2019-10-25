@@ -38,12 +38,15 @@ input wire predict_taken_dec,					// predict_taken at DEC stage
 input wire predict1_taken_dec,					// predict_taken at DEC stage
 input wire predict3_taken_dec,					// predict_taken at DEC stage
 input wire is_loop_dec,						// is_loop at DEC stage
+input wire peek_ret_dec,					// peek ret at DEC stage
 input wire [`INSTR_WIDTH - 1 : 0] instr_dec,			// instruction at dec stage
 input wire [`ADDR_WIDTH - 1 : 0] pc_dec,			// pc propagated from IF stage
 input wire [`ADDR_WIDTH - 1 : 0] pc_plus4_dec,			// pc plus4 propagated from IF stage
 output wire fence_dec,						// fence
 output reg jalr_ex,						// jalr
-output wire jal_dec,						// jal
+output wire jal_dec,						// jalr
+output wire jalr_dec,						// jal
+output wire [`RD_WIDTH - 1 : 0] rd_dec,				// rd at DEC stage	
 output reg signed [`DATA_WIDTH - 1 : 0] imm_ex,			// imm at EX stage
 output wire signed [`DATA_WIDTH - 1 : 0] imm_dec,		// imm at DEC stage
 output wire mret,						// mret
@@ -92,6 +95,7 @@ output reg predict_taken_ex,
 output reg predict1_taken_ex,
 output reg predict3_taken_ex,
 output reg is_loop_ex,
+output reg peek_ret_ex,
 output reg [`ADDR_WIDTH - 1 : 0] pc_ex,				// propagate pc to EX stage
 output reg [`ADDR_WIDTH - 1 : 0] pc_plus4_ex,			// propagate pc to EX stage
 output reg [`DATA_WIDTH - 1 : 0] instr_ex,			// propagate pc to EX stage
@@ -163,6 +167,7 @@ wire [`FUNCT12_WIDTH - 1 : 0]	funct12;
 wire [`RS2_WIDTH - 1 : 0]	rs2;
 wire [`RS1_WIDTH - 1 : 0] 	rs1;
 wire [`RD_WIDTH - 1  : 0] 	rd;
+assign rd_dec = rd;
 wire [`FUNCT3_WIDTH - 1 : 0]	funct3;
 wire [`OPCODE_WIDTH - 1 : 0]	opcode;
 
@@ -412,7 +417,7 @@ assign rs2_dec = {1'b0,rs2};
 
 wire dec_stall;
 assign jal_dec = instruction_is_jal && !dec_stall;
-wire jalr_dec = instruction_is_jalr && !dec_stall;
+assign jalr_dec = instruction_is_jalr && !dec_stall;
 
 wire only_src2_used_dec = instruction_is_lui || mcsr_rd || instruction_is_jal || instruction_is_jalr;  
 wire src1_not_used_dec = instruction_is_lui || instruction_is_jal;		   
@@ -657,7 +662,7 @@ begin
 	end
 	else
 	begin
-		if (jalr_ex || exception_met /*flush_dec*/)
+		if (jalr_ex || exception_met)
 			begin
 				beq_ex <= 1'b0;
 				bne_ex <= 1'b0;
@@ -763,6 +768,7 @@ begin
 		predict1_taken_ex <= 1'b0;
 		predict3_taken_ex <= 1'b0;
 		is_loop_ex <= 1'b0;
+		peek_ret_ex <= 1'b0;
 		pc_ex <= 0;
 		pc_plus4_ex <= 0;
 		instr_ex <= 0;
@@ -781,6 +787,7 @@ begin
 			predict1_taken_ex <= 1'b0;
 			predict3_taken_ex <= 1'b0;
 			is_loop_ex <= 1'b0;
+			peek_ret_ex <= 1'b0;
 			mem_H_ex <= 1'b0;
 			mem_B_ex <= 1'b0;
 			mem_U_ex <= 1'b0;
@@ -812,6 +819,7 @@ begin
 				predict1_taken_ex <= predict1_taken_dec;
 				predict3_taken_ex <= predict3_taken_dec;
 				is_loop_ex <= is_loop_dec;
+				peek_ret_ex <= peek_ret_dec;
 				pc_ex <= pc_dec;
 				pc_plus4_ex <= pc_plus4_dec;
 				instr_ex <= instr_dec;
@@ -871,7 +879,7 @@ if(!cpu_rstn)
 			end
 			else
 			begin
-				jalr_ex <= jalr_dec;
+				jalr_ex <= (jalr_dec && !peek_ret_dec);
 			end
 		end
 	end

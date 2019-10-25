@@ -34,12 +34,15 @@ input wire [`ADDR_WIDTH - 1 : 0] boot_addr,		// boot address from SoC
 
 //interface with dec
 input wire jal_dec, 					// jal
+input wire jalr_dec, 					// jal
+input wire [`RD_WIDTH - 1 : 0] rd_dec,			// rd
 input wire jalr_ex, 					// jalr
 input wire fence_dec,					// fence
 output reg predict_taken_dec,				// propagate predict taken to DEC stage
 output reg predict1_taken_dec,				// propagate predict taken to DEC stage
 output reg predict3_taken_dec,				// propagate predict taken to DEC stage
 output reg is_loop_dec,					// propagate loop detection to DEC stage
+output reg peek_ret_dec,				// propagate peek return to DEC stage
 output reg [`ADDR_WIDTH - 1 : 0] pc_dec,		// Program counter at DEC stage
 output reg [`ADDR_WIDTH - 1 : 0] pc_plus4_dec,		// Program counter plus 4 at DEC stage
 input wire dec_ready, 					// dec ready signal
@@ -50,6 +53,7 @@ input wire signed [`DATA_WIDTH - 1 : 0] src_data2_ex,	// source data 1 at EX sta
 input wire signed [`DATA_WIDTH - 1 : 0] imm_ex,		// immediate at ex stage
 input wire signed [`DATA_WIDTH - 1 : 0] imm_dec,	// immediate at dec stage
 input wire is_loop_ex,					// loop dectection at EX stage
+input wire peek_ret_ex,					// propagate peek return to DEC stage
 input wire predict_taken_ex,				// predict taken at EX stage
 input wire predict1_taken_ex,				// predict taken at EX stage
 input wire predict3_taken_ex,				// predict taken at EX stage
@@ -240,6 +244,7 @@ begin
 		predict1_taken_dec <= 1'b0;
 		predict3_taken_dec <= 1'b0;
 		is_loop_dec <= 1'b0;
+		peek_ret_dec <= 1'b0;
 	end
 	else
 	begin
@@ -251,6 +256,7 @@ begin
 			predict1_taken_dec <= 1'b0;
 			predict3_taken_dec <= 1'b0;
 			is_loop_dec <= 1'b0;
+			peek_ret_dec <= 1'b0;
 		end
 		else if(dec_ready)
 		begin
@@ -262,6 +268,7 @@ begin
 				predict1_taken_dec <= 1'b0;
 				predict3_taken_dec <= 1'b0;
 				is_loop_dec <= 1'b0;
+				peek_ret_dec <= 1'b0;
 			end
 			else
 			begin
@@ -272,6 +279,7 @@ begin
 				predict1_taken_dec <= predict1_taken;
 				predict3_taken_dec <= predict3_taken;
 				is_loop_dec <= is_loop;
+				peek_ret_dec <= peek_ret;
 			end
 		end
 	end
@@ -293,13 +301,7 @@ assign addr_adder_res = addr_adder_src1 + addr_adder_src2;
 
 always @ *
 begin
-/*
-	if(branch_taken_ex || (branch_taken_ex_r))	//branch taken
-	begin
-		addr_adder_src1 = pc_ex;
-		addr_adder_src2 = imm_ex;
-	end
-	else*/ if(jalr_ex || (jalr_ex_r))			//jalr
+	if(jalr_ex || jalr_ex_r)			//jalr
 	begin
 		addr_adder_src1 = src_data1_ex;
 		addr_adder_src2 = imm_ex;
@@ -344,8 +346,30 @@ branch_predict u_branch_predict(
 wire mis_predict_taken 	   = (predict_taken_ex && !branch_taken_ex) || (predict_taken_ex_r && !branch_taken_ex_r && !instr_read_data_valid);
 wire mis_predict_not_taken = (!predict_taken_ex && branch_taken_ex) || (!predict_taken_ex_r && branch_taken_ex_r && !instr_read_data_valid);
 assign mis_predict = mis_predict_taken || mis_predict_not_taken;
-//determine the next_pc
 
+//return stack
+
+wire peek_ret = (instr_read_data == 32'h00008067 );
+
+wire stack_empty;
+wire ret_stack_wen = (jal_dec || (!peek_ret_dec && jalr_dec) )&& !(branch_taken_ex || jalr_ex) && (rd_dec == 5'h1);
+wire ret_stack_ren = peek_ret && !stack_empty && !(branch_taken_ex || jal_dec || jalr_ex);
+wire [`ADDR_WIDTH - 1 : 0] ret_addr;
+
+ret_stack u_ret_stack
+(
+.cpu_clk		(cpu_clk	),					
+.cpu_rstn		(cpu_rstn	),		
+.ret_stack_wen		(ret_stack_wen	),
+.pc_dec			(pc_dec		),
+.ret_stack_ren		(ret_stack_ren	),
+.stack_empty		(stack_empty	),
+.ret_addr		(ret_addr	)
+);
+
+
+
+//determine the next_pc
 wire keep_pc = fence_dec || (fence_dec_r && !instr_read_data_valid) || !dec_ready || !instr_read_data_valid;
 
 always @*
@@ -373,10 +397,14 @@ begin
 	begin
 		next_pc = branch_target_pc;
 	end
-	else if(jalr_ex || jal_dec || ((jalr_ex_r || jal_dec_r) && !instr_read_data_valid))
+	else if((jalr_ex) || jal_dec || ((jalr_ex_r || jal_dec_r) && !instr_read_data_valid))
 	begin
 		next_pc = addr_adder_res_c;
 	end
+	else if(ret_stack_ren)
+	begin
+		next_pc = ret_addr;
+	end	
 	else if(mret || (mret_r))
 	begin
 		next_pc = mepc;
@@ -427,7 +455,7 @@ wire [31:0] jal_dec_cnt;
 en_cnt u_jal_dec_cnt (.clk(cpu_clk), .rstn(cpu_rstn), .en(jal_dec), .cnt (jal_dec_cnt));
 
 wire [31:0] jalr_ex_cnt;
-en_cnt u_jalr_ex_cnt (.clk(cpu_clk), .rstn(cpu_rstn), .en(jalr_ex), .cnt (jalr_ex_cnt));
+en_cnt u_jalr_ex_cnt (.clk(cpu_clk), .rstn(cpu_rstn), .en(jalr_ex/* && !peek_ret_ex*/), .cnt (jalr_ex_cnt));
 
 
 endmodule

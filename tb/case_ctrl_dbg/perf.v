@@ -12,6 +12,7 @@ wire [31:0] load_hazard_stall = DUT.u_core.u_dec.load_hazard_stall_cnt;
 wire [31:0] load_stall = DUT.u_core.u_dmem_ctrl.load_stall_cnt;
 wire [31:0] store_stall = DUT.u_core.u_dmem_ctrl.store_stall_cnt;
 
+
 //check recount
 wire branch = DUT.u_core.u_dec.branch;
 wire mis_predict = DUT.u_core.u_dec.valid_mis_predict;
