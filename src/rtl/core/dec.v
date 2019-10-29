@@ -39,11 +39,19 @@ input wire predict1_taken_dec,					// predict_taken at DEC stage
 input wire predict3_taken_dec,					// predict_taken at DEC stage
 input wire is_loop_dec,						// is_loop at DEC stage
 input wire peek_ret_dec,					// peek ret at DEC stage
+input wire ret_stack_pre_rd,
+input wire ret_stack_ren_dec,
+input wire[`ADDR_WIDTH - 1 : 0] ret_addr_dec,
 input wire [`INSTR_WIDTH - 1 : 0] instr_dec,			// instruction at dec stage
 input wire [`ADDR_WIDTH - 1 : 0] pc_dec,			// pc propagated from IF stage
 input wire [`ADDR_WIDTH - 1 : 0] pc_plus4_dec,			// pc plus4 propagated from IF stage
+output wire flush_dec,
 output wire fence_dec,						// fence
+output reg ret_stack_pre_rd_ex,
+output reg branch_ex,						// branch at EX stage
+output wire branch_dec,						// branch at DEC stage
 output reg jalr_ex,						// jalr
+output reg ret_ex,						// jalr
 output wire jal_dec,						// jalr
 output wire jalr_dec,						// jal
 output wire [`RD_WIDTH - 1 : 0] rd_dec,				// rd at DEC stage	
@@ -82,8 +90,8 @@ output reg blt_ex,  						// blt at EX stage
 output reg bge_ex,  						// bge at EX stage
 output reg bltu_ex, 						// bltu at EX stage
 output reg bgeu_ex, 						// bgeu at EX stage
-output reg branch_ex,						// branch at EX stage
 input wire mis_predict,						// branch mispredicted
+input wire flush_ret_stack,					
 output reg load_ex, 						// propagate load to EX stage                   
 output reg store_ex, 						// propagate store to EX stage     
 output reg [`DATA_WIDTH - 1 : 0] store_data_ex,			// propagate store data to EX stage
@@ -96,6 +104,8 @@ output reg predict1_taken_ex,
 output reg predict3_taken_ex,
 output reg is_loop_ex,
 output reg peek_ret_ex,
+output reg ret_stack_ren_ex,
+output reg [`ADDR_WIDTH - 1 : 0] ret_addr_ex,
 output reg [`ADDR_WIDTH - 1 : 0] pc_ex,				// propagate pc to EX stage
 output reg [`ADDR_WIDTH - 1 : 0] pc_plus4_ex,			// propagate pc to EX stage
 output reg [`DATA_WIDTH - 1 : 0] instr_ex,			// propagate pc to EX stage
@@ -418,6 +428,7 @@ assign rs2_dec = {1'b0,rs2};
 wire dec_stall;
 assign jal_dec = instruction_is_jal && !dec_stall;
 assign jalr_dec = instruction_is_jalr && !dec_stall;
+assign ret_dec = (valid_instr == 32'h00008067 ) && !dec_stall;
 
 wire only_src2_used_dec = instruction_is_lui || mcsr_rd || instruction_is_jal || instruction_is_jalr;  
 wire src1_not_used_dec = instruction_is_lui || instruction_is_jal;		   
@@ -523,7 +534,7 @@ end
 //---------------------------------------------------------------------------//
 wire dec_bubble = !if_valid || dec_stall;
 //dec flush condition
-wire flush_dec = mis_predict || jalr_ex || exception_met
+assign flush_dec = mis_predict || flush_ret_stack || jalr_ex || exception_met
 `ifdef KRV_HAS_DBG
 || breakpoint
 `endif
@@ -649,6 +660,7 @@ begin
 end
 
 //for branch 
+assign branch_dec = instruction_is_branch;
 always @ (posedge cpu_clk or negedge cpu_rstn)
 begin
 	if (!cpu_rstn)
@@ -765,10 +777,13 @@ begin
 		mem_U_ex <= 1'b0;
 		branch_ex <= 1'b0;
 		predict_taken_ex <= 1'b0;
+		ret_stack_pre_rd_ex <= 1'b0;
 		predict1_taken_ex <= 1'b0;
 		predict3_taken_ex <= 1'b0;
 		is_loop_ex <= 1'b0;
 		peek_ret_ex <= 1'b0;
+		ret_stack_ren_ex <= 1'b0;
+		ret_addr_ex <= {`ADDR_WIDTH{1'b0}};
 		pc_ex <= 0;
 		pc_plus4_ex <= 0;
 		instr_ex <= 0;
@@ -784,10 +799,13 @@ begin
 			pre_instr_is_load <= 1'b0;
 			branch_ex <= 1'b0;
 			predict_taken_ex <= 1'b0;
+			ret_stack_pre_rd_ex <= 1'b0;
 			predict1_taken_ex <= 1'b0;
 			predict3_taken_ex <= 1'b0;
 			is_loop_ex <= 1'b0;
 			peek_ret_ex <= 1'b0;
+			ret_stack_ren_ex <= 1'b0;
+			ret_addr_ex <= {`ADDR_WIDTH{1'b0}};
 			mem_H_ex <= 1'b0;
 			mem_B_ex <= 1'b0;
 			mem_U_ex <= 1'b0;
@@ -816,10 +834,13 @@ begin
 				mem_U_ex <= (instruction_is_load || instruction_is_store) && (funct3_101 || funct3_100); 
 				branch_ex <= instruction_is_branch;
 				predict_taken_ex <= predict_taken_dec;
+				ret_stack_pre_rd_ex <= ret_stack_pre_rd;
 				predict1_taken_ex <= predict1_taken_dec;
 				predict3_taken_ex <= predict3_taken_dec;
 				is_loop_ex <= is_loop_dec;
 				peek_ret_ex <= peek_ret_dec;
+				ret_stack_ren_ex <= ret_stack_ren_dec;
+				ret_addr_ex <= ret_addr_dec;
 				pc_ex <= pc_dec;
 				pc_plus4_ex <= pc_plus4_dec;
 				instr_ex <= instr_dec;
@@ -864,22 +885,26 @@ begin
 if(!cpu_rstn)
 	begin
 		jalr_ex <= 1'b0;
+		ret_ex <= 1'b0;
 	end
 	else 
 	begin
 		if(exception_met || mis_predict)
 		begin
 			jalr_ex <= 1'b0;
+			ret_ex <= 1'b0;
 		end
 		else if(ex_ready)
 		begin
 			if(dec_bubble)
 			begin
 				jalr_ex <= 1'b0;
+				ret_ex <= 1'b0;
 			end
 			else
 			begin
-				jalr_ex <= (jalr_dec && !peek_ret_dec);
+				jalr_ex <= (jalr_dec && !ret_stack_ren_dec);
+				ret_ex <= ret_dec;
 			end
 		end
 	end

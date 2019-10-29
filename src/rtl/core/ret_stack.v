@@ -32,7 +32,9 @@ input cpu_clk,
 input cpu_rstn,		
 input wire ret_stack_wen,
 input wire[`ADDR_WIDTH - 1 : 0] pc_dec,
+input wire ret_stack_mis_pre_rd,
 input wire ret_stack_ren,
+input wire flush_ret_stack,
 
 output wire stack_empty,
 output wire[`ADDR_WIDTH - 1 : 0] ret_addr
@@ -56,14 +58,25 @@ begin
 	end
 	else
 	begin
-		if(ret_stack_wen)
+		if (flush_ret_stack)
 		begin
-			stack[ret_sp] <= pc_dec + 32'h4;
-			ret_sp <= ret_sp + 1;
+			ret_sp <= {addr_width{1'b0}};
 		end
-		if(ret_stack_ren)
+		else
 		begin
-			ret_sp <= ret_sp - 1;
+			if(ret_stack_wen)
+			begin
+				stack[ret_sp] <= pc_dec + 32'h4;
+				ret_sp <= ret_sp + 1;
+			end
+			if(ret_stack_mis_pre_rd)
+			begin
+				ret_sp <= ret_sp + 1;
+			end
+			if(ret_stack_ren)
+			begin
+				ret_sp <= ret_sp - 1;
+			end
 		end
 	end
 end

@@ -60,55 +60,6 @@ parameter ITERATE 		= 32'h00001ae4;
 parameter STOP_TIME 		= 32'h0000082c;
 parameter MAINDONE		= 32'h0000007c;
 
-wire [31:0] mret_addr = DUT.u_core.u_fetch.mepc;
-wire [31:0] mret_instr = DUT.u_core.u_fetch.mret;
-
-wire [31:0] mem_addr = DUT.u_core.u_dmem_ctrl.mem_addr_mem;
-wire mem_st = DUT.u_core.u_dmem_ctrl.store_mem;
-wire[31:0] st_data = DUT.u_core.u_dmem_ctrl.store_data_mem;
-wire[31:0] ld_data = DUT.u_core.u_dmem_ctrl.mem_read_data;
-wire ld_data_vld = DUT.u_core.u_dmem_ctrl.mem_wb_data_valid;
-
-always @(posedge cpu_clk)
-begin
-	if((mem_addr==32'h4400bff8) && ld_data_vld)
-	begin
-		$display ("read time");
-		$display ("@time %t  !",$time);
-		$display ("read data = %h",ld_data);
-		$display ("\n");
-	end
-end
-
-wire div = DUT.u_core.u_dec.alu_div_dec;
-wire [31:0] src1_data = DUT.u_core.u_dec.src_data1_dec;
-wire [31:0] src2_data = DUT.u_core.u_dec.src_data2_dec;
-always @(posedge cpu_clk)
-begin
-	if((src1_data==32'h19bfcc0) || (src2_data==32'h19bfcc0))
-	begin
-		$display ("HZ");
-		$display ("@time %t  !",$time);
-		$display ("src1 data = %h", src1_data);
-		$display ("src2 data = %h", src2_data);
-		$display ("\n");
-	end
-end
-
-/*
-always @(posedge cpu_clk)
-begin
-	if(div)
-	begin
-		$display ("met div");
-		$display ("@time %t  !",$time);
-		$display ("src1 data = %h", src1_data);
-		$display ("src2 data = %h", src2_data);
-		$display ("\n");
-	end
-end
-
-*/
 always @(posedge cpu_clk)
 begin
 	begin
@@ -159,5 +110,4 @@ begin
 		endcase
 	end
 end
-
 

@@ -133,3 +133,23 @@ begin
 end
 
 
+wire ret_stack_ren = DUT.u_core.u_fetch.ret_stack_ren;
+wire ret_stack_wen = DUT.u_core.u_fetch.ret_stack_wen;
+wire[31:0] ret_addr = DUT.u_core.u_fetch.ret_addr;
+
+always @(posedge DUT.cpu_clk)
+begin
+	if(ret_stack_wen && (dec_pc == 32'h6f0))
+		begin
+			$display ("write ret stack with ret_addr = 6f4");
+			$display ("@time %t  !",$time);
+			$display ("\n");
+		end
+	if(ret_stack_ren && (ret_addr == 32'h6f4))
+		begin
+			$display ("read ret stack with ret_addr = 6f4");
+			$display ("@time %t  !",$time);
+			$display ("\n");
+		end
+end
+
