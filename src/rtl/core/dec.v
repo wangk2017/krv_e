@@ -103,7 +103,6 @@ output reg predict_taken_ex,
 output reg predict1_taken_ex,
 output reg predict3_taken_ex,
 output reg is_loop_ex,
-output reg peek_ret_ex,
 output reg ret_stack_ren_ex,
 output reg [`ADDR_WIDTH - 1 : 0] ret_addr_ex,
 output reg [`ADDR_WIDTH - 1 : 0] pc_ex,				// propagate pc to EX stage
@@ -781,7 +780,6 @@ begin
 		predict1_taken_ex <= 1'b0;
 		predict3_taken_ex <= 1'b0;
 		is_loop_ex <= 1'b0;
-		peek_ret_ex <= 1'b0;
 		ret_stack_ren_ex <= 1'b0;
 		ret_addr_ex <= {`ADDR_WIDTH{1'b0}};
 		pc_ex <= 0;
@@ -803,7 +801,6 @@ begin
 			predict1_taken_ex <= 1'b0;
 			predict3_taken_ex <= 1'b0;
 			is_loop_ex <= 1'b0;
-			peek_ret_ex <= 1'b0;
 			ret_stack_ren_ex <= 1'b0;
 			ret_addr_ex <= {`ADDR_WIDTH{1'b0}};
 			mem_H_ex <= 1'b0;
@@ -838,7 +835,6 @@ begin
 				predict1_taken_ex <= predict1_taken_dec;
 				predict3_taken_ex <= predict3_taken_dec;
 				is_loop_ex <= is_loop_dec;
-				peek_ret_ex <= peek_ret_dec;
 				ret_stack_ren_ex <= ret_stack_ren_dec;
 				ret_addr_ex <= ret_addr_dec;
 				pc_ex <= pc_dec;

@@ -29,7 +29,6 @@ input wire cpu_clk,					//cpu clock
 input wire cpu_rstn,					//cpu reset, active low
 
 //interface with fetch
-input wire [`ADDR_WIDTH - 1 : 0] next_pc,		//next_pc
 input wire [`ADDR_WIDTH - 1 : 0] pc,			//pc
 output wire [`INSTR_WIDTH - 1 : 0] instr_read_data,  	//instruction
 output wire instr_read_data_valid,			//instruction valid
@@ -65,19 +64,19 @@ assign addr_itcm = 1'b0;
 wire addr_AXI;
 assign addr_AXI = ~(addr_itcm);
 
-reg addr_itcm_r;
+//reg addr_itcm_r;
 reg addr_AXI_r;
 
 always @ (posedge cpu_clk or negedge cpu_rstn)
 begin
 	if(!cpu_rstn)
 	begin
-		addr_itcm_r <= 1'b0;
+		//addr_itcm_r <= 1'b0;
 		addr_AXI_r <= 1'b0;
 	end
 	else
 	begin
-		addr_itcm_r <= addr_itcm;
+		//addr_itcm_r <= addr_itcm;
 		addr_AXI_r <= addr_AXI;
 	end
 end
@@ -94,8 +93,8 @@ assign IAXI_addr = pc;
 //---------------------------------------------//
 //read data MUX 
 //---------------------------------------------//
-assign instr_read_data = ({`INSTR_WIDTH{(addr_itcm_r & instr_itcm_read_data_valid)}} & instr_itcm_read_data)
+assign instr_read_data = ({`INSTR_WIDTH{(addr_itcm & instr_itcm_read_data_valid)}} & instr_itcm_read_data)
 			|({`INSTR_WIDTH{(!itcm_auto_load & addr_AXI_r &  IAXI_read_data_valid)}} & IAXI_read_data);
-assign instr_read_data_valid = (addr_itcm_r && instr_itcm_read_data_valid) || (!itcm_auto_load && addr_AXI_r && IAXI_read_data_valid);
+assign instr_read_data_valid = (addr_itcm && instr_itcm_read_data_valid) || (!itcm_auto_load && addr_AXI_r && IAXI_read_data_valid);
 
 endmodule

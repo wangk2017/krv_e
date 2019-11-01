@@ -121,7 +121,6 @@ wire 					flush_dec;
 wire 					ret_stack_pre_rd;
 wire 					ret_stack_pre_rd_ex;
 wire 					peek_ret_dec;
-wire 					peek_ret_ex;
 wire					ret_stack_ren_dec;
 wire					ret_stack_ren_ex;
 wire[`ADDR_WIDTH - 1 : 0] 		ret_addr_dec;
@@ -258,7 +257,6 @@ wire [31:0] 				mtvec_base;
 wire [`INSTR_WIDTH - 1 : 0] 		instr_dec	;
 wire 					instr_read_data_valid;	
 wire [`INSTR_WIDTH - 1 : 0] 		instr_read_data;
-wire [`ADDR_WIDTH - 1 : 0] 		next_pc;
 
 wire 					if_valid;
 wire 					dec_valid;
@@ -298,7 +296,6 @@ reset_comb u_reset_comb (
 imem_ctrl u_imem_ctrl(
 .cpu_clk			(cpu_clk),		
 .cpu_rstn			(comb_rstn),		
-.next_pc			(next_pc),
 .pc				(pc),	
 .instr_read_data		(instr_read_data),
 .instr_read_data_valid		(instr_read_data_valid),
@@ -319,7 +316,6 @@ fetch u_fetch(
 .cpu_clk		(cpu_clk),		
 .cpu_rstn		(comb_rstn),		
 .boot_addr		(boot_addr),
-.next_pc		(next_pc),	
 .pc			(pc),	
 .instr_read_data	(instr_read_data),
 .instr_read_data_valid	(instr_read_data_valid),	
@@ -352,7 +348,6 @@ fetch u_fetch(
 .predict1_taken_ex	(predict1_taken_ex),
 .predict3_taken_ex	(predict3_taken_ex),
 .is_loop_ex		(is_loop_ex),
-.peek_ret_ex		(peek_ret_ex),
 .ret_stack_ren_ex	(ret_stack_ren_ex),
 .ret_addr_ex		(ret_addr_ex),
 .branch_taken_ex	(branch_taken_ex),
@@ -452,7 +447,6 @@ dec u_dec (
 .predict1_taken_ex	(predict1_taken_ex),
 .predict3_taken_ex	(predict3_taken_ex),
 .is_loop_ex		(is_loop_ex),
-.peek_ret_ex		(peek_ret_ex),
 .ret_stack_ren_ex	(ret_stack_ren_ex),
 .ret_addr_ex		(ret_addr_ex),
 .pc_ex			(pc_ex),

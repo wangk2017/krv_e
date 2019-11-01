@@ -20,6 +20,9 @@
 // History:   							||
 //                      2017/9/26 				||
 //                      First version				||
+//                      2019/11/1 				||
+//                      Add dynamic branch prediction 		||
+//                      And return stack               		||
 //===============================================================
 
 
@@ -34,20 +37,20 @@ input wire [`ADDR_WIDTH - 1 : 0] boot_addr,		// boot address from SoC
 
 //interface with dec
 input wire jal_dec, 					// jal
-input wire jalr_dec, 					// jal
+input wire jalr_dec, 					// jalr
+input wire jalr_ex, 					// jalr at EX stage
 input wire [`RD_WIDTH - 1 : 0] rd_dec,			// rd
-input wire jalr_ex, 					// jalr
-input wire ret_ex, 					// jalr
+input wire ret_ex, 					// ret instr at EX stage
 input wire fence_dec,					// fence
-input wire flush_dec,
+input wire flush_dec,					// flush DEC stage
 output reg predict_taken_dec,				// propagate predict taken to DEC stage
-output reg predict1_taken_dec,				// propagate predict taken to DEC stage
-output reg predict3_taken_dec,				// propagate predict taken to DEC stage
+output reg predict1_taken_dec,				// propagate predict taken by predictor1 to DEC stage
+output reg predict3_taken_dec,				// propagate predict taken by predictor3 to DEC stage
 output wire ret_stack_pre_rd,				// ret stack pre-read at EX stage
-output reg ret_stack_ren_dec, 
+output reg ret_stack_ren_dec, 				// ret stack read at DEC stage
 output reg[`ADDR_WIDTH - 1 : 0] ret_addr_dec,		// ret addr at DEC stage
-output reg is_loop_dec,					// propagate loop detection to DEC stage
 output reg peek_ret_dec,				// propagate peek return to DEC stage
+output reg is_loop_dec,					// propagate loop detection to DEC stage
 output reg [`ADDR_WIDTH - 1 : 0] pc_dec,		// Program counter at DEC stage
 output reg [`ADDR_WIDTH - 1 : 0] pc_plus4_dec,		// Program counter plus 4 at DEC stage
 input wire dec_ready, 					// dec ready signal
@@ -58,7 +61,6 @@ input wire signed [`DATA_WIDTH - 1 : 0] src_data2_ex,	// source data 1 at EX sta
 input wire signed [`DATA_WIDTH - 1 : 0] imm_ex,		// immediate at ex stage
 input wire signed [`DATA_WIDTH - 1 : 0] imm_dec,	// immediate at dec stage
 input wire is_loop_ex,					// loop dectection at EX stage
-input wire peek_ret_ex,					// propagate peek return to DEC stage
 input wire ret_stack_ren_ex,
 input wire[`ADDR_WIDTH - 1 : 0] ret_addr_ex,		// ret addr at EX stage
 input wire ret_stack_pre_rd_ex,				// ret stack pre-read at EX stage
@@ -68,20 +70,17 @@ input wire predict3_taken_ex,				// predict taken at EX stage
 input wire [`ADDR_WIDTH - 1 : 0] pc_ex,			// Program counter value at EX stage
 input wire [`ADDR_WIDTH - 1 : 0] pc_plus4_ex,		// Program counter plus 4 at DEC stage
 output wire mis_predict,				// mis predict of branch
-output wire flush_ret_stack,
-
-//interface with alu
+output wire flush_ret_stack,				// flush return stack due to error
 input wire branch_dec,
 input wire branch_ex,
 input wire branch_taken_ex,				// branch condition met
 
 //interface with imem_ctrl
-output reg [`ADDR_WIDTH - 1 : 0] next_pc,		// Program counter value for imem addr
+output reg [`ADDR_WIDTH - 1 : 0] pc,	
 input wire instr_read_data_valid,			// instruction valid from imem		
 input wire [`INSTR_WIDTH - 1 : 0] instr_read_data, 	// instruction from imem
 
 //interface with trap_ctrl
-output reg [`ADDR_WIDTH - 1 : 0] pc,	
 input wire mret,					// mret
 output wire pc_misaligned,				// pc misaligned condition found at IF stage
 output wire [`ADDR_WIDTH - 1 : 0] fault_pc,		// the misaligned pc recorded at IF stage
@@ -110,7 +109,6 @@ input wire [`ADDR_WIDTH - 1 : 0] dpc			// dpc for return from debug
 //add some buffer regs to hold the control state when ITCM disabled
 //--------------------------------------------------------------------------------------//
 wire if_bubble;
-wire [`ADDR_WIDTH - 1 : 0] addr_adder_res;
 
 `ifndef KRV_HAS_ITCM
 reg flush_if_r;
@@ -121,7 +119,6 @@ reg predict_taken_ex_r;
 reg [`DATA_WIDTH - 1 : 0] imm_dec_r;
 reg mret_r;
 reg fence_dec_r;
-reg [`ADDR_WIDTH - 1 : 0] addr_adder_res_r;
 
 always @ (posedge cpu_clk or negedge cpu_rstn)
 begin
@@ -185,27 +182,7 @@ begin
 	end
 end
 
-always @ (posedge cpu_clk or negedge cpu_rstn)
-begin
-	if (~cpu_rstn)
-	begin
-		addr_adder_res_r <= {`ADDR_WIDTH{1'b0}};
-	end
-	else 
-	begin
-		if (instr_read_data_valid)
-		begin
-			addr_adder_res_r <= {`ADDR_WIDTH{1'b0}};	
-		end
-		else if(branch_taken_ex || jal_dec || jalr_ex)
-		begin
-			addr_adder_res_r <= addr_adder_res;
-		end
-	end
-
-end
 wire [`DATA_WIDTH - 1 : 0] imm_dec_f = if_bubble_r ? imm_dec_r : imm_dec;
-wire  [`ADDR_WIDTH - 1 : 0] addr_adder_res_c = (branch_taken_ex_r || jal_dec_r || jalr_ex_r )? addr_adder_res_r : addr_adder_res;
 
 `else
 wire flush_if_r = 1'b0;
@@ -216,8 +193,159 @@ wire predict_taken_ex_r = 1'b0;
 wire mret_r = 1'b0;
 wire fence_dec_r = 1'b0;
 wire [`DATA_WIDTH - 1 : 0] imm_dec_f = imm_dec;
-wire  [`ADDR_WIDTH - 1 : 0] addr_adder_res_c = addr_adder_res;
 `endif
+
+wire predict_taken;
+wire is_loop;
+wire [`ADDR_WIDTH - 1 : 0] predict_target_pc;
+wire[`ADDR_WIDTH - 1 : 0] branch_target_pc = pc_ex + imm_ex;
+wire[`ADDR_WIDTH - 1 : 0] branch_pc_ex = pc_ex; 
+wire jump = jal_dec || jalr_ex || ((jal_dec_r || jalr_ex_r) && !instr_read_data_valid);
+
+wire stack_empty;
+wire ret_stack_ren = !stack_empty && peek_ret && (!flush_if);
+wire [`ADDR_WIDTH - 1 : 0] ret_addr;
+//--------------------------------------------------------------------------------------//
+// PC calculation
+//--------------------------------------------------------------------------------------//
+//JAL
+//JALR
+//Branch
+//normal
+//--------------------------------------------------------------------------------------//
+
+wire[`ADDR_WIDTH - 1 : 0] jalr_target_pc = src_data1_ex + imm_ex;
+wire[`ADDR_WIDTH - 1 : 0] jal_target_pc = pc_dec + imm_dec_f;
+wire [`ADDR_WIDTH - 1 : 0] pc_plus4 = pc + 4;	
+
+reg [`ADDR_WIDTH - 1 : 0] next_pc;
+
+//branch predictor
+branch_predict u_branch_predict(
+.cpu_clk		(cpu_clk		),						
+.cpu_rstn		(cpu_rstn		),						
+.next_pc		(next_pc		),
+.pc			(pc			),
+.predict_taken		(predict_taken		),
+.predict1_taken		(predict1_taken		),
+.predict3_taken		(predict3_taken		),
+.is_loop		(is_loop		),
+.predict_target_pc	(predict_target_pc	),
+.predict1_taken_ex	(predict1_taken_ex	),
+.predict3_taken_ex	(predict3_taken_ex	),
+.is_loop_ex		(is_loop_ex		),
+.branch_ex		(branch_ex		),
+.jal_dec		(jal_dec		),
+.jalr_ex		(jalr_ex		),
+.branch_pc_ex		(branch_pc_ex		),
+.src_data1_ex		(src_data1_ex		),
+.src_data2_ex		(src_data2_ex		),
+.branch_target_pc	(branch_target_pc	),
+.branch_taken_ex	(branch_taken_ex	)
+);
+
+wire mis_predict_taken 	   = (predict_taken_ex && !branch_taken_ex) || (predict_taken_ex_r && !branch_taken_ex_r && !instr_read_data_valid);
+wire mis_predict_not_taken = (!predict_taken_ex && branch_taken_ex) || (!predict_taken_ex_r && branch_taken_ex_r && !instr_read_data_valid);
+assign mis_predict = mis_predict_taken || mis_predict_not_taken;
+
+//return stack
+
+wire peek_ret = (instr_read_data == 32'h00008067 );
+
+wire ret_stack_wen = (jal_dec || (!peek_ret_dec && jalr_dec)) && (rd_dec==5'h1) && (!flush_dec);
+
+assign ret_stack_pre_rd =  peek_ret && branch_dec && (!predict_taken_dec);
+wire ret_stack_mis_pre_rd = mis_predict_not_taken && ret_stack_pre_rd_ex;
+
+wire peek_ret_err = ret_stack_ren_ex && (!ret_ex);
+wire ret_addr_err = (ret_stack_ren_ex && ret_ex) && (ret_addr_ex != jalr_target_pc);
+assign flush_ret_stack = ret_addr_err || peek_ret_err;
+
+ret_stack u_ret_stack
+(
+.cpu_clk		(cpu_clk	),					
+.cpu_rstn		(cpu_rstn	),		
+.ret_stack_wen		(ret_stack_wen	),
+.pc_dec			(pc_dec		),
+.ret_stack_mis_pre_rd	(ret_stack_mis_pre_rd),
+.ret_stack_ren		(ret_stack_ren	),
+.stack_empty		(stack_empty	),
+.flush_ret_stack	(flush_ret_stack),
+.ret_addr		(ret_addr	)
+);
+
+
+
+//determine the next_pc
+wire keep_pc = fence_dec || (fence_dec_r && !instr_read_data_valid) || !dec_ready || !instr_read_data_valid;
+
+always @*
+begin
+`ifdef KRV_HAS_DBG
+	if(dret || single_step)
+	begin
+		next_pc = dpc;
+	end
+	else if(dbg_mode)		//halt during dbg_mode
+	begin
+		next_pc = pc;
+	end
+	else
+`endif 
+	if(trap)
+	begin
+		next_pc = vector_addr;
+	end
+	else if(mis_predict_taken)
+	begin
+		next_pc = pc_plus4_ex;
+	end
+	else if(mis_predict_not_taken)
+	begin
+		next_pc = branch_target_pc;
+	end
+	else if(flush_ret_stack || jalr_ex || (jalr_ex_r && !instr_read_data_valid))
+	begin
+		next_pc = jalr_target_pc;
+	end
+	else if( jal_dec || (jal_dec_r && !instr_read_data_valid))
+	begin
+		next_pc = jal_target_pc;
+	end
+	else if(ret_stack_ren)
+	begin
+		next_pc = ret_addr;
+	end	
+	else if(mret || (mret_r))
+	begin
+		next_pc = mepc;
+	end
+	else if (keep_pc)
+	begin
+		next_pc = pc;
+	end
+	else if(predict_taken)
+	begin
+		next_pc = predict_target_pc;
+	end
+	else
+	begin
+		next_pc = pc_plus4;
+	end
+end
+
+
+always @ (posedge cpu_clk or negedge cpu_rstn)
+begin
+	if (~cpu_rstn)
+	begin
+		pc <= boot_addr;
+	end
+	else
+	begin
+		pc <= next_pc;
+	end
+end
 
 //--------------------------------------------------------------------------------------//
 //propagate from IF to DEC stage
@@ -229,24 +357,12 @@ wire if_stall = 1'b0;
 `endif
 
 assign if_bubble = !instr_read_data_valid || if_stall;
-//wire flush_if = fence_dec || fence_dec_r || jal_dec_r || jalr_ex_r || mis_predict || trap | mret || mret_r
 wire flush_if = fence_dec || fence_dec_r || (jal_dec && dec_ready) || jal_dec_r || jalr_ex || jalr_ex_r || mis_predict || flush_ret_stack || trap | mret || mret_r
 `ifdef KRV_HAS_DBG
 || ebreak || breakpoint
 `endif
 ;
 
-wire predict_taken;
-wire is_loop;
-wire [`ADDR_WIDTH - 1 : 0] predict_target_pc;
-wire[`ADDR_WIDTH - 1 : 0] branch_target_pc = pc_ex + imm_ex;
-wire[`ADDR_WIDTH - 1 : 0] branch_pc_ex = pc_ex; 
-wire [`ADDR_WIDTH - 1 : 0] pc_plus4 = pc + 4;	
-wire jump = jal_dec || jalr_ex || ((jal_dec_r || jalr_ex_r) && !instr_read_data_valid);
-
-wire stack_empty;
-wire ret_stack_ren = !stack_empty && peek_ret && (!flush_if);
-wire [`ADDR_WIDTH - 1 : 0] ret_addr;
 
 always @ (posedge cpu_clk or negedge cpu_rstn)
 begin
@@ -308,169 +424,6 @@ begin
 		end
 	end
 end
-//--------------------------------------------------------------------------------------//
-// PC calculation
-//--------------------------------------------------------------------------------------//
-//An address adder is used to calculate the next pc based on the conditions listed below
-//JAL
-//JALR
-//Branch
-//normal
-//--------------------------------------------------------------------------------------//
-
-
-reg [`ADDR_WIDTH - 1 : 0] addr_adder_src1;
-reg [`ADDR_WIDTH - 1 : 0] addr_adder_src2;
-assign addr_adder_res = addr_adder_src1 + addr_adder_src2;
-
-always @ *
-begin
-	if(jalr_ex || jalr_ex_r)			//jalr
-	begin
-		addr_adder_src1 = src_data1_ex;
-		addr_adder_src2 = imm_ex;
-	end
-	else if(jal_dec || (jal_dec_r))			//jal
-	begin
-		addr_adder_src1 = pc_dec;
-		addr_adder_src2 = imm_dec_f;
-	end
-	else						//normal
-	begin
-		addr_adder_src1 = pc;
-		addr_adder_src2 = 4;
-	end
-end
-
-
-//branch predictor
-branch_predict u_branch_predict(
-.cpu_clk		(cpu_clk		),						
-.cpu_rstn		(cpu_rstn		),						
-.next_pc		(next_pc		),
-.pc			(pc			),
-.predict_taken		(predict_taken		),
-.predict1_taken		(predict1_taken		),
-.predict3_taken		(predict3_taken		),
-.is_loop		(is_loop		),
-.predict_target_pc	(predict_target_pc	),
-.predict1_taken_ex	(predict1_taken_ex	),
-.predict3_taken_ex	(predict3_taken_ex	),
-.is_loop_ex		(is_loop_ex		),
-.branch_ex		(branch_ex		),
-.jal_dec		(jal_dec		),
-.jalr_ex		(jalr_ex		),
-.branch_pc_ex		(branch_pc_ex		),
-.src_data1_ex		(src_data1_ex		),
-.src_data2_ex		(src_data2_ex		),
-.branch_target_pc	(branch_target_pc	),
-.branch_taken_ex	(branch_taken_ex	)
-);
-
-wire mis_predict_taken 	   = (predict_taken_ex && !branch_taken_ex) || (predict_taken_ex_r && !branch_taken_ex_r && !instr_read_data_valid);
-wire mis_predict_not_taken = (!predict_taken_ex && branch_taken_ex) || (!predict_taken_ex_r && branch_taken_ex_r && !instr_read_data_valid);
-assign mis_predict = mis_predict_taken || mis_predict_not_taken;
-
-//return stack
-
-wire peek_ret = (instr_read_data == 32'h00008067 );
-
-wire[`ADDR_WIDTH - 1 : 0] jalr_target_pc = src_data1_ex + imm_ex;
-wire ret_stack_wen = (jal_dec || (!peek_ret_dec && jalr_dec)) && (rd_dec==5'h1) && (!flush_dec);
-
-assign ret_stack_pre_rd =  peek_ret && branch_dec && (!predict_taken_dec);
-wire ret_stack_mis_pre_rd = mis_predict_not_taken && ret_stack_pre_rd_ex;
-
-wire peek_ret_err = ret_stack_ren_ex && (!ret_ex);
-wire ret_addr_err = (ret_stack_ren_ex && ret_ex) && (ret_addr_ex != jalr_target_pc);
-assign flush_ret_stack = ret_addr_err || peek_ret_err;
-
-ret_stack u_ret_stack
-(
-.cpu_clk		(cpu_clk	),					
-.cpu_rstn		(cpu_rstn	),		
-.ret_stack_wen		(ret_stack_wen	),
-.pc_dec			(pc_dec		),
-.ret_stack_mis_pre_rd	(ret_stack_mis_pre_rd),
-.ret_stack_ren		(ret_stack_ren	),
-.stack_empty		(stack_empty	),
-.flush_ret_stack	(flush_ret_stack),
-.ret_addr		(ret_addr	)
-);
-
-
-
-//determine the next_pc
-wire keep_pc = fence_dec || (fence_dec_r && !instr_read_data_valid) || !dec_ready || !instr_read_data_valid;
-
-always @*
-begin
-`ifdef KRV_HAS_DBG
-	if(dret || single_step)
-	begin
-		next_pc = dpc;
-	end
-	else if(dbg_mode)		//halt during dbg_mode
-	begin
-		next_pc = pc;
-	end
-	else
-`endif 
-	if(trap)
-	begin
-		next_pc = vector_addr;
-	end
-	else if(mis_predict_taken)
-	begin
-		next_pc = pc_plus4_ex;
-	end
-	else if(mis_predict_not_taken)
-	begin
-		next_pc = branch_target_pc;
-	end
-	else if(flush_ret_stack)
-	begin
-		next_pc = jalr_target_pc;
-	end
-	else if((jalr_ex) || jal_dec || ((jalr_ex_r || jal_dec_r) && !instr_read_data_valid))
-	begin
-		next_pc = addr_adder_res_c;
-	end
-	else if(ret_stack_ren)
-	begin
-		next_pc = ret_addr;
-	end	
-	else if(mret || (mret_r))
-	begin
-		next_pc = mepc;
-	end
-	else if (keep_pc)
-	begin
-		next_pc = pc;
-	end
-	else if(predict_taken)
-	begin
-		next_pc = predict_target_pc;
-	end
-	else
-	begin
-		next_pc = addr_adder_res_c;
-	end
-end
-
-
-always @ (posedge cpu_clk or negedge cpu_rstn)
-begin
-	if (~cpu_rstn)
-	begin
-		pc <= boot_addr;
-	end
-	else
-	begin
-		pc <= next_pc;
-	end
-end
-
 
 //--------------------------------------------------------------------------------------//
 // check pc misaligned condition
