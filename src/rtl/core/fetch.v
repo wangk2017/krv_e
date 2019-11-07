@@ -233,6 +233,7 @@ branch_predict u_branch_predict(
 .predict_target_pc	(predict_target_pc	),
 .predict1_taken_ex	(predict1_taken_ex	),
 .predict3_taken_ex	(predict3_taken_ex	),
+.is_loop_dec		(is_loop_dec		),
 .is_loop_ex		(is_loop_ex		),
 .branch_ex		(branch_ex		),
 .jal_dec		(jal_dec		),

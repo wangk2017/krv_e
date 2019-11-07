@@ -41,6 +41,7 @@ module branch_predict (
 	input [`ADDR_WIDTH - 1 : 0] branch_pc_ex,
 	input [`DATA_WIDTH - 1 : 0] src_data1_ex,
 	input [`DATA_WIDTH - 1 : 0] src_data2_ex,
+	input is_loop_dec,
 	input is_loop_ex,
 	input branch_taken_ex
 );
@@ -189,9 +190,11 @@ loop_predictor u_predict2(
 .cpu_rstn		(cpu_rstn),
 .pc_ex			(branch_pc_ex),
 .branch_ex		(branch_ex),
+.branch_taken_ex	(branch_taken_ex),
 .jal_dec		(jal_dec),
 .jalr_ex		(jalr_ex),
 .pc			(pc),
+.is_loop_dec		(is_loop_dec),
 .is_loop_ex		(is_loop_ex),
 .src_data1_ex		(src_data1_ex),
 .src_data2_ex		(src_data2_ex),

@@ -28,10 +28,12 @@ input wire cpu_rstn,
 
 input wire[`ADDR_WIDTH - 1 : 0] pc_ex,
 input wire branch_ex,
+input wire branch_taken_ex,
 input wire jal_dec,
 input wire jalr_ex,
 input wire[`ADDR_WIDTH - 1 : 0] pc,
 
+input wire is_loop_dec,
 input wire is_loop_ex,
 input wire[`DATA_WIDTH - 1 : 0] src_data1_ex,
 input wire[`DATA_WIDTH - 1 : 0] src_data2_ex,
@@ -80,7 +82,12 @@ begin
 	end
 	else 
 	begin
-		if(branch_ex)
+		if(branch_taken_ex)
+		begin
+			loop_src_data1 <= src_data1_ex;
+			loop_src_data2 <= src_data2_ex;
+		end
+		else if(branch_ex && !is_loop_dec && !is_loop)
 		begin
 			loop_src_data1 <= src_data1_ex;
 			loop_src_data2 <= src_data2_ex;
@@ -91,11 +98,6 @@ end
 wire [`DATA_WIDTH - 1 : 0] branch_src_data1_ex = {32{branch_ex & is_loop_ex}} & src_data1_ex;
 wire [`DATA_WIDTH - 1 : 0] branch_src_data2_ex = {32{branch_ex & is_loop_ex}} & src_data2_ex;
 
-/*
-wire src_data1_keep = (branch_src_data1_ex == loop_src_data1);
-wire src_data2_keep = (branch_src_data2_ex == loop_src_data2);
-wire [`DATA_WIDTH - 1 : 0] loop_end_data = src_data1_keep? loop_src_data1 : src_data2_keep ? loop_src_data2 : ;
-*/
 
 wire [`DATA_WIDTH - 1 : 0] src_data1_incr = is_loop_ex ? ((branch_src_data1_ex > loop_src_data1) ?  (branch_src_data1_ex - loop_src_data1) : (loop_src_data1 - branch_src_data1_ex)) : 0;
 wire [`DATA_WIDTH - 1 : 0] src_data2_incr = is_loop_ex ? ((branch_src_data2_ex > loop_src_data2) ?  (branch_src_data2_ex - loop_src_data2) : (loop_src_data2 - branch_src_data2_ex)) : 0;
