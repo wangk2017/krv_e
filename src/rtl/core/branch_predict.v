@@ -49,7 +49,7 @@ module branch_predict (
 
 
 //parameters
-parameter ENTRY_NUM = 256;
+parameter ENTRY_NUM = 512;
 parameter PR_ADDR_WIDTH = $clog2(ENTRY_NUM);
 
 //----------------------------------------------------------------------------//
@@ -135,7 +135,7 @@ sram_256x32 bht(
 );
 
 `else
-reg[`ADDR_WIDTH - 1 : 0] bht [255:0];
+reg[`ADDR_WIDTH - 1 : 0] bht [ENTRY_NUM - 1 : 0];
 reg[`ADDR_WIDTH - 1 : 0] bht_r_pc;
 
 always @ (posedge cpu_clk or negedge cpu_rstn)
@@ -211,20 +211,21 @@ wire [PR_ADDR_WIDTH - 1 : 0] predict3_waddr = branch_pc_ex[PR_ADDR_WIDTH + 1 : 2
 wire predict3_wen = branch_ex;
 wire predict3_rd_data;
 wire predict3_rd_valid;
-predictor_10rec #(.entry_num(ENTRY_NUM),.addr_width(PR_ADDR_WIDTH)) u_predict3 (
+predictor_rec #(.entry_num(ENTRY_NUM),.addr_width(PR_ADDR_WIDTH),.rec_num(8)) u_predict3 (
 .cpu_clk		(cpu_clk),
 .cpu_rstn		(cpu_rstn),
 .predictor_raddr 	(predict3_raddr),
 .predictor_waddr 	(predict3_waddr),
 .predictor_wen	 	(predict3_wen),
 .branch_taken_ex 	(branch_taken_ex),
-.rec_10_entry_valid	(predict3_rd_valid),
+.rec_entry_valid	(predict3_rd_valid),
 .predictor_rd_data	(predict3_rd_data)
 );
 
 //predictor selector
 wire predictor;
 wire predict1_win = predict1_rd_credit >= predict3_rd_credit;
+wire predict3_win = predict1_rd_credit < predict3_rd_credit;
 //assign predictor = predict1_rd_data[1];
 assign predictor = is_loop_det? predict2_rd_data : (predict1_win ? predict1_rd_data : predict3_rd_data);
 
@@ -254,7 +255,7 @@ sram_256x32 btt(
 );
 
 `else
-reg[`ADDR_WIDTH - 1 : 0] btt [255:0];
+reg[`ADDR_WIDTH - 1 : 0] btt [ENTRY_NUM - 1 : 0];
 reg[`ADDR_WIDTH - 1 : 0] btt_r_pc;
 
 always @ (posedge cpu_clk)
