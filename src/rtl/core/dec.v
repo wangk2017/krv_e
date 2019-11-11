@@ -35,6 +35,7 @@ input wire cpu_rstn,						// cpu reset, active low
 input wire if_valid,						// indication of IF stage data valid
 output wire dec_ready,						// indication of DEC stage is ready
 input wire predict_taken_dec,					// predict_taken at DEC stage
+input wire predict0_taken_dec,					// predict_taken at DEC stage
 input wire predict1_taken_dec,					// predict_taken at DEC stage
 input wire predict3_taken_dec,					// predict_taken at DEC stage
 input wire is_loop_dec,						// is_loop at DEC stage
@@ -100,6 +101,7 @@ output reg mem_B_ex,						// propagate byte accessto EX stage
 output reg mem_U_ex,						// propagate unsigned load to EX stage
 output reg [`RD_WIDTH:0] rd_ex, 				// propagate rd to EX stage
 output reg predict_taken_ex,
+output reg predict0_taken_ex,
 output reg predict1_taken_ex,
 output reg predict3_taken_ex,
 output reg is_loop_ex,
@@ -777,6 +779,7 @@ begin
 		branch_ex <= 1'b0;
 		predict_taken_ex <= 1'b0;
 		ret_stack_pre_rd_ex <= 1'b0;
+		predict0_taken_ex <= 1'b0;
 		predict1_taken_ex <= 1'b0;
 		predict3_taken_ex <= 1'b0;
 		is_loop_ex <= 1'b0;
@@ -798,6 +801,7 @@ begin
 			branch_ex <= 1'b0;
 			predict_taken_ex <= 1'b0;
 			ret_stack_pre_rd_ex <= 1'b0;
+			predict0_taken_ex <= 1'b0;
 			predict1_taken_ex <= 1'b0;
 			predict3_taken_ex <= 1'b0;
 			is_loop_ex <= 1'b0;
@@ -832,6 +836,7 @@ begin
 				branch_ex <= instruction_is_branch;
 				predict_taken_ex <= predict_taken_dec;
 				ret_stack_pre_rd_ex <= ret_stack_pre_rd;
+				predict0_taken_ex <= predict0_taken_dec;
 				predict1_taken_ex <= predict1_taken_dec;
 				predict3_taken_ex <= predict3_taken_dec;
 				is_loop_ex <= is_loop_dec;

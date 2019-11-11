@@ -44,6 +44,7 @@ input wire ret_ex, 					// ret instr at EX stage
 input wire fence_dec,					// fence
 input wire flush_dec,					// flush DEC stage
 output reg predict_taken_dec,				// propagate predict taken to DEC stage
+output reg predict0_taken_dec,				// propagate predict taken by predictor1 to DEC stage
 output reg predict1_taken_dec,				// propagate predict taken by predictor1 to DEC stage
 output reg predict3_taken_dec,				// propagate predict taken by predictor3 to DEC stage
 output wire ret_stack_pre_rd,				// ret stack pre-read at EX stage
@@ -65,6 +66,7 @@ input wire ret_stack_ren_ex,
 input wire[`ADDR_WIDTH - 1 : 0] ret_addr_ex,		// ret addr at EX stage
 input wire ret_stack_pre_rd_ex,				// ret stack pre-read at EX stage
 input wire predict_taken_ex,				// predict taken at EX stage
+input wire predict0_taken_ex,				// predict taken at EX stage
 input wire predict1_taken_ex,				// predict taken at EX stage
 input wire predict3_taken_ex,				// predict taken at EX stage
 input wire [`ADDR_WIDTH - 1 : 0] pc_ex,			// Program counter value at EX stage
@@ -227,10 +229,12 @@ branch_predict u_branch_predict(
 .next_pc		(next_pc		),
 .pc			(pc			),
 .predict_taken		(predict_taken		),
+.predict0_taken		(predict0_taken		),
 .predict1_taken		(predict1_taken		),
 .predict3_taken		(predict3_taken		),
 .is_loop		(is_loop		),
 .predict_target_pc	(predict_target_pc	),
+.predict0_taken_ex	(predict0_taken_ex	),
 .predict1_taken_ex	(predict1_taken_ex	),
 .predict3_taken_ex	(predict3_taken_ex	),
 .is_loop_dec		(is_loop_dec		),
@@ -374,6 +378,7 @@ begin
 		pc_plus4_dec <= boot_addr;
 		if_valid <= 1'b0;
 		predict_taken_dec <= 1'b0;
+		predict0_taken_dec <= 1'b0;
 		predict1_taken_dec <= 1'b0;
 		predict3_taken_dec <= 1'b0;
 		is_loop_dec <= 1'b0;
@@ -388,6 +393,7 @@ begin
 			instr_dec <= {`INSTR_WIDTH{1'b0}};
 			if_valid <= 1'b0;
 			predict_taken_dec <= 1'b0;
+			predict0_taken_dec <= 1'b0;
 			predict1_taken_dec <= 1'b0;
 			predict3_taken_dec <= 1'b0;
 			is_loop_dec <= 1'b0;
@@ -402,6 +408,7 @@ begin
 			begin
 				instr_dec <= {`INSTR_WIDTH{1'b0}};
 				predict_taken_dec <= 1'b0;
+				predict0_taken_dec <= 1'b0;
 				predict1_taken_dec <= 1'b0;
 				predict3_taken_dec <= 1'b0;
 				is_loop_dec <= 1'b0;
@@ -415,6 +422,7 @@ begin
 				pc_dec <= pc;
 				pc_plus4_dec <= pc_plus4;
 				predict_taken_dec <= predict_taken;
+				predict0_taken_dec <= predict0_taken;
 				predict1_taken_dec <= predict1_taken;
 				predict3_taken_dec <= predict3_taken;
 				is_loop_dec <= is_loop;

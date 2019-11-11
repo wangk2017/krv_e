@@ -28,10 +28,12 @@ module branch_predict (
 	input [`ADDR_WIDTH - 1 : 0] next_pc,
 	input [`ADDR_WIDTH - 1 : 0] pc,
 	output predict_taken,
+	output predict0_taken,
 	output predict1_taken,
 	output predict3_taken,
 	output is_loop,
 	output [`ADDR_WIDTH - 1 : 0] predict_target_pc,
+	input predict0_taken_ex,
 	input predict1_taken_ex,
 	input predict3_taken_ex,
 	input [`ADDR_WIDTH - 1 : 0] branch_target_pc,
@@ -63,8 +65,11 @@ reg [ENTRY_NUM - 1 : 0] bht_item_valid;
 reg [ENTRY_NUM - 1 : 0] bht_item_is_loop;
 reg bht_read_item_valid;
 reg is_loop_rec;
+
+reg[15:0] predict0_credit[ENTRY_NUM - 1 : 0];
 reg[15:0] predict1_credit[ENTRY_NUM - 1 : 0];
 reg[15:0] predict3_credit[ENTRY_NUM - 1 : 0];
+reg[15:0] predict0_rd_credit;
 reg[15:0] predict1_rd_credit;
 reg[15:0] predict3_rd_credit;
 
@@ -76,6 +81,7 @@ begin
 		bht_item_is_loop <= {ENTRY_NUM{1'b0}};
 		bht_read_item_valid <= 1'b0;
 		is_loop_rec <= 1'b0;
+		predict0_rd_credit <= 16'h0;
 		predict1_rd_credit <= 16'h0;
 		predict3_rd_credit <= 16'h0;
 	end
@@ -83,6 +89,7 @@ begin
 	begin
 		bht_read_item_valid <= bht_item_valid[bht_raddr];
 		is_loop_rec <= bht_item_is_loop[bht_raddr];
+		predict0_rd_credit <= predict0_credit[bht_raddr];
 		predict1_rd_credit <= predict1_credit[bht_raddr];
 		predict3_rd_credit <= predict3_credit[bht_raddr];
 		if(bht_wen)
@@ -95,8 +102,10 @@ end
 
 
 integer i;
+wire predict0_credit_full = (predict0_credit[bht_waddr] == 16'hffff);
 wire predict1_credit_full = (predict1_credit[bht_waddr] == 16'hffff);
 wire predict3_credit_full = (predict3_credit[bht_waddr] == 16'hffff);
+wire predict0_score = predict0_taken_ex ~^ branch_taken_ex;
 wire predict1_score = predict1_taken_ex ~^ branch_taken_ex;
 wire predict3_score = predict3_taken_ex ~^ branch_taken_ex;
 
@@ -106,6 +115,7 @@ begin
 	begin
 		for(i=0; i<ENTRY_NUM; i=i+1)
 		begin
+			predict0_credit[i] <= 16'h0;
 			predict1_credit[i] <= 16'h0;
 			predict3_credit[i] <= 16'h0;
 		end
@@ -114,6 +124,8 @@ begin
 	begin
 		if(bht_wen)
 		begin
+			if(predict0_score && (!predict0_credit_full) && (!is_loop_ex))
+			predict0_credit[bht_waddr] <= predict0_credit[bht_waddr] + 16'h1;
 			if(predict1_score && (!predict1_credit_full) && (!is_loop_ex))
 			predict1_credit[bht_waddr] <= predict1_credit[bht_waddr] + 16'h1;
 			if(predict3_score && (!predict3_credit_full) && (!is_loop_ex))
@@ -151,9 +163,8 @@ end
 wire hit = bht_read_item_valid ? (pc == bht_r_pc) : 1'b0;
 
 wire predict1_rd_data;
-`ifdef CORRELATING_PREDICTION
-//predict1 - 2-level 2-bit predictor
-predictor_m2n2 u_predict1(
+//predict0 - 2-level 2-bit predictor
+predictor_m2n2 u_predict0(
 .cpu_clk		(cpu_clk		),
 .cpu_rstn		(cpu_rstn		),
 .branch_ex		(branch_ex		),
@@ -161,10 +172,9 @@ predictor_m2n2 u_predict1(
 .branch_taken_ex	(branch_taken_ex	),
 .next_pc		(next_pc		),
 .branch_pc_ex		(branch_pc_ex		),
-.predictor		(predict1_rd_data	)
+.predictor		(predict0_rd_data	)
 );
 
-`else
 //predict1 - basic predictor
 wire [PR_ADDR_WIDTH - 1 : 0] predict1_raddr = next_pc[PR_ADDR_WIDTH + 1 : 2];
 wire [PR_ADDR_WIDTH - 1 : 0] predict1_waddr = branch_pc_ex[PR_ADDR_WIDTH + 1 : 2];
@@ -180,7 +190,6 @@ basic_predictor_2b #(.entry_num(ENTRY_NUM),.addr_width(PR_ADDR_WIDTH)) u_predict
 .branch_taken_ex 	(branch_taken_ex),
 .predictor_rd_data	(predict1_rd_data)
 );
-`endif
 
 //predict2 - loop predictor
 wire predict2_rd_data;
@@ -224,13 +233,15 @@ predictor_rec #(.entry_num(ENTRY_NUM),.addr_width(PR_ADDR_WIDTH),.rec_num(8)) u_
 
 //predictor selector
 wire predictor;
-wire predict1_win = predict1_rd_credit >= predict3_rd_credit;
-wire predict3_win = predict1_rd_credit < predict3_rd_credit;
+wire predict0_win = (predict0_rd_credit > predict1_rd_credit) && (predict0_rd_credit > predict3_rd_credit);
+wire predict1_win = (predict1_rd_credit >= predict3_rd_credit) && (predict1_rd_credit >= predict0_rd_credit);
+wire predict3_win = (predict3_rd_credit > predict0_rd_credit) && (predict3_rd_credit > predict1_rd_credit);
 //assign predictor = predict1_rd_data[1];
-assign predictor = is_loop_det? predict2_rd_data : (predict1_win ? predict1_rd_data : predict3_rd_data);
+assign predictor = is_loop_det? predict2_rd_data : (predict1_win ? predict1_rd_data : (predict3_win? predict3_rd_data : predict0_rd_data));
 
 //assign predict_taken = 1'b0;
 
+assign predict0_taken = hit && predict0_rd_data;
 assign predict1_taken = hit && predict1_rd_data;
 assign predict3_taken = hit && predict3_rd_data;
 

@@ -6,7 +6,6 @@
 `define SHAMT_WIDTH 5
 `define MCSR_N 22
 `define EMEM_BUFFER_WIDTH `DATA_WIDTH + `ADDR_WIDTH + 4
-//`define CORRELATING_PREDICTION
 
 //Instruction format
 `define OPCODE_RANGE 	6:0

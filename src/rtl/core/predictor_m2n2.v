@@ -30,7 +30,7 @@ input      			is_loop_ex,
 input     			branch_taken_ex,
 input [`ADDR_WIDTH - 1 : 0] 	next_pc,
 input [`ADDR_WIDTH - 1 : 0] 	branch_pc_ex,
-output [1:0]			predictor
+output 				predictor
 );
 //parameters
 parameter ENTRY_NUM = 256;
